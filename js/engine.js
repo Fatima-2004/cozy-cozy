@@ -1142,8 +1142,8 @@ export class HUD {
     btn.addEventListener('click', () => {
       this._overlay.style.display = 'none';
       this._overlayVisible = false;
-      document.getElementById('canvas').requestPointerLock();
-      if (this._onStart) this._onStart();
+      if (onBtn) onBtn();
+    setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
     });
   }
 
@@ -1183,8 +1183,8 @@ export class HUD {
       this._overlay.style.display = 'none';
       this._overlay.style.pointerEvents = 'none';
       this._overlayVisible = false;
-      document.getElementById('canvas').requestPointerLock();
-      if (onBtn) onBtn();
+      if (this._onStart) this._onStart();
+    setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
     };
   }
 }

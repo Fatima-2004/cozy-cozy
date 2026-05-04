@@ -407,7 +407,7 @@ export class Grocery extends Level {
 
   // ─────────────────────────────────────────────────────────
   onEnter() {
-    this.fp.speed = 4.8;
+    this.fp.speed = 9;
     this.fp.teleport(0, 0, 5, Math.PI);
 
     // Reset items

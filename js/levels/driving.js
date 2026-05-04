@@ -42,10 +42,10 @@ const COAST_DRAG    = 3.5;
 const REVERSE_ACCEL = 5;
 
 // Steering: turn rate scales DOWN with speed (understeer at high speed)
-const STEER_MAX_DEG    = 32;   // max wheel angle (degrees) at low speed
-const STEER_SPEED_NORM = 8;    // speed at which steer angle halves
-const STEER_INPUT_RATE = 2.4;  // how fast steer input builds
-const STEER_RETURN     = 4.0;  // auto-centre rate
+const STEER_MAX_DEG    = 52;   // max wheel angle (degrees) at low speed
+const STEER_SPEED_NORM = 14;    // speed at which steer angle halves
+const STEER_INPUT_RATE = 3.8;  // how fast steer input builds
+const STEER_RETURN     = 2.2;  // auto-centre rate
 
 const CAR_HALF_W    = 0.85;
 const EYE_HEIGHT    = 1.28;

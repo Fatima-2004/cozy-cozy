@@ -10,7 +10,6 @@ import { EffectComposer }      from 'three/examples/jsm/postprocessing/EffectCom
 import { RenderPass }          from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass }     from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass }          from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { SSAOPass }            from 'three/examples/jsm/postprocessing/SSAOPass.js';
 import { BokehPass }           from 'three/examples/jsm/postprocessing/BokehPass.js';
 import { FXAAShader }          from 'three/examples/jsm/shaders/FXAAShader.js';
 import { OutputPass }          from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -23,7 +22,6 @@ import { LensflareElement, Lensflare } from 'three/examples/jsm/objects/Lensflar
 export const PostProfiles = {
   grocery: {
   bloom:    { strength: 0.06, radius: 0.25, threshold: 0.96 }, // almost no bloom
-  ssao:     { radius: 0.14, minDistance: 0.001, maxDistance: 0.09 },
   dof:      { focus: 18.0, aperture: 0.00006, maxBlur: 0.002 },
   vignette: { darkness: 0.38, offset: 1.0 },
   ca:       { offset: 0.0005 },
@@ -32,7 +30,6 @@ export const PostProfiles = {
   },
   cooking: {
     bloom:     { strength: 0.18, radius: 0.5,  threshold: 0.88 },
-    ssao:      { radius: 0.14, minDistance: 0.001, maxDistance: 0.1  },
     dof:       { focus: 10.0, aperture: 0.00012, maxBlur: 0.004 },
     vignette:  { darkness: 0.5,  offset: 0.9  },
     ca:        { offset: 0.001  },
@@ -40,7 +37,6 @@ export const PostProfiles = {
   },
   packing: {
     bloom:     { strength: 0.1,  radius: 0.35, threshold: 0.92 },
-    ssao:      { radius: 0.1,  minDistance: 0.001, maxDistance: 0.07 },
     dof:       { focus: 12.0, aperture: 0.0001,  maxBlur: 0.003 },
     vignette:  { darkness: 0.4,  offset: 1.0  },
     ca:        { offset: 0.0006 },
@@ -48,7 +44,6 @@ export const PostProfiles = {
   },
   driving: {
     bloom:     { strength: 0.12, radius: 0.4,  threshold: 0.9  },
-    ssao:      { radius: 0.08, minDistance: 0.001, maxDistance: 0.06 },
     dof:       { focus: 40.0, aperture: 0.00005, maxBlur: 0.006 },
     vignette:  { darkness: 0.55, offset: 0.85 },
     ca:        { offset: 0.0014 },
@@ -56,7 +51,6 @@ export const PostProfiles = {
   },
   stargazing: {
     bloom:     { strength: 0.9,  radius: 0.7,  threshold: 0.75 },
-    ssao:      { radius: 0.1,  minDistance: 0.001, maxDistance: 0.08 },
     dof:       { focus: 60.0, aperture: 0.00003, maxBlur: 0.008 },
     vignette:  { darkness: 0.75, offset: 0.75 },
     ca:        { offset: 0.002  },
@@ -204,12 +198,12 @@ export class Renderer {
 
     composer.addPass(new RenderPass(scene, camera));
 
-    const ssao = new SSAOPass(scene, camera, w, h);
-    ssao.kernelRadius = profile.ssao.radius;
-    ssao.minDistance  = profile.ssao.minDistance;
-    ssao.maxDistance  = profile.ssao.maxDistance;
-    ssao.output       = SSAOPass.OUTPUT.Default;
-    composer.addPass(ssao);
+    //const ssao = new SSAOPass(scene, camera, w, h);
+    //ssao.kernelRadius = profile.ssao.radius;
+    //ssao.minDistance  = profile.ssao.minDistance;
+    //ssao.maxDistance  = profile.ssao.maxDistance;
+    //ssao.output       = SSAOPass.OUTPUT.Default;
+    //composer.addPass(ssao);
 
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(w, h),
@@ -219,12 +213,12 @@ export class Renderer {
     );
     composer.addPass(bloom);
 
-    const dof = new BokehPass(scene, camera, {
-      focus:   profile.dof.focus,
-      aperture:profile.dof.aperture,
-      maxblur: profile.dof.maxBlur,
-    });
-    composer.addPass(dof);
+    //const dof = new BokehPass(scene, camera, {
+    //  focus:   profile.dof.focus,
+    //  aperture:profile.dof.aperture,
+    //  maxblur: profile.dof.maxBlur,
+   // });
+   // composer.addPass(dof);
 
     const vigCA = new ShaderPass(VignetteCAShader);
     vigCA.material.uniforms.darkness.value  = profile.vignette.darkness;
@@ -239,7 +233,7 @@ export class Renderer {
     fxaa.material.uniforms['resolution'].value.set(1 / w, 1 / h);
     composer.addPass(fxaa);
 
-    const passes = { composer, ssao, bloom, dof, vigCA, fxaa };
+    const passes = { composer, bloom, dof, vigCA, fxaa };
     this._composers.set(scene.uuid, passes);
     return composer;
   }

@@ -290,8 +290,7 @@ export class Stargazing extends Level {
     // look around
     this._yaw   -= inp.mouse.dx * this._sens;
     this._pitch -= inp.mouse.dy * this._sens;
-    this._pitch = THREE.this._pitch = THREE.MathUtils.clamp(this._pitch, 0.3, Math.PI / 2 + 0.3);.clamp(this._pitch, 0.16, Math.PI / 2 + 0.4);
-
+this._pitch = THREE.MathUtils.clamp(this._pitch, 0.3, Math.PI / 2 + 0.3);
     const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this._yaw);
     const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), this._pitch);
     this.camera.quaternion.copy(qY).multiply(qX);

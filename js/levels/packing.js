@@ -84,10 +84,10 @@ export class Packing extends Level {
     Build.floor(s, 0xf5eaff, 22, 18);
     const geo=new THREE.PlaneGeometry(1.8,1.8);
     for(let tx=-6;tx<=6;tx++) for(let tz=-5;tz<=5;tz++){
-      const m=new THREE.Mesh(geo,Anime.mat((tx+tz)%2===0?0xf0e4fc:0xe8dcf5));
+      const m=new THREE.Mesh(geo,Anime.mat((tx+tz)%2===0?0x7a4a2a:0x6b3d20));
       m.rotation.x=-Math.PI/2; m.position.set(tx*1.8,0.002,tz*1.8); s.add(m);
     }
-    const wm=Anime.mat(0xfce8ff);
+    const wm=Anime.mat(0xb8845a);
     [[0,2,-9,22,4,0.2],[0,2,9,22,4,0.2],[-11,2,0,0.2,4,18],[11,2,0,0.2,4,18]]
       .forEach(([x,y,z,w,h,d])=>{
         const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wm);

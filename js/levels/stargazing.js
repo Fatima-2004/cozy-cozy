@@ -181,7 +181,7 @@ export class Stargazing extends Level {
 
       // star sphere
       const mesh = new THREE.Mesh(
-        new THREE.SphereGeometry(1.4, 10, 8),
+        new THREE.SphereGeometry(2.0, 10, 8),
         new THREE.MeshBasicMaterial({ color: 0xffffff })
       );
       mesh.position.copy(wp);
@@ -265,8 +265,9 @@ export class Stargazing extends Level {
     this.camera.fov = 78; this.camera.updateProjectionMatrix();
     this.camera.position.set(0, 1.6, 0.4);
 
-    if (!this.engine.input.locked) this.engine.input.requestLock();
-    this._lockOnClick = () => { if (!this.engine.input.locked) this.engine.input.requestLock(); };
+  setTimeout(() => {
+  if (!this.engine.input.locked) this.engine.input.requestLock();
+}, 400);    this._lockOnClick = () => { if (!this.engine.input.locked) this.engine.input.requestLock(); };
     document.getElementById('canvas').addEventListener('click', this._lockOnClick);
 
     this.engine.audio.play('music', 68);

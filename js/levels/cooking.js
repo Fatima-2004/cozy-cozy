@@ -102,7 +102,7 @@ export class Cooking extends Level {
 
   // ── Floor — checkerboard tile ─────────────────────────────
   _buildFloor(s) {
-    const mats = [Anime.mat(0xf9f0e0), Anime.mat(0xeee4d4)];
+    const mats = [Anime.mat(0x8b5e3c), Anime.mat(0x7a4f30)];
     const geo  = new THREE.PlaneGeometry(1.5,1.5);
     for(let tx=-8;tx<=8;tx++) for(let tz=-7;tz<=7;tz++){
       const m = new THREE.Mesh(geo, mats[(tx+tz+100)%2]);
@@ -113,7 +113,7 @@ export class Cooking extends Level {
 
   // ── Walls + ceiling ───────────────────────────────────────
   _buildWalls(s) {
-    const wm = Anime.mat(0xfff0d8);
+    const wm = Anime.mat(0xc4956a);
     [[0,2,-7,18,4,0.2],[0,2,7,18,4,0.2],[-9,2,0,0.2,4,14],[9,2,0,0.2,4,14]]
       .forEach(([x,y,z,w,h,d])=>{
         const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wm);

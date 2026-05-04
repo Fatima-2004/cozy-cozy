@@ -360,6 +360,7 @@ export const Anime = {
     ctx.putImageData(id, 0, 0);
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.channel = 0; 
     return tex;
   },
 

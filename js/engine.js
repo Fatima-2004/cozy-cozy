@@ -22,7 +22,6 @@ import { LensflareElement, Lensflare } from 'three/examples/jsm/objects/Lensflar
 export const PostProfiles = {
   grocery: {
   bloom:    { strength: 0.06, radius: 0.25, threshold: 0.96 }, // almost no bloom
-  dof:      { focus: 18.0, aperture: 0.00006, maxBlur: 0.002 },
   vignette: { darkness: 0.38, offset: 1.0 },
   ca:       { offset: 0.0005 },
   exposure: 0.78,  // darker overall — most important change
@@ -30,28 +29,24 @@ export const PostProfiles = {
   },
   cooking: {
     bloom:     { strength: 0.18, radius: 0.5,  threshold: 0.88 },
-    dof:       { focus: 10.0, aperture: 0.00012, maxBlur: 0.004 },
     vignette:  { darkness: 0.5,  offset: 0.9  },
     ca:        { offset: 0.001  },
     exposure:  1.0,
   },
   packing: {
     bloom:     { strength: 0.1,  radius: 0.35, threshold: 0.92 },
-    dof:       { focus: 12.0, aperture: 0.0001,  maxBlur: 0.003 },
     vignette:  { darkness: 0.4,  offset: 1.0  },
     ca:        { offset: 0.0006 },
     exposure:  0.88,
   },
   driving: {
     bloom:     { strength: 0.12, radius: 0.4,  threshold: 0.9  },
-    dof:       { focus: 40.0, aperture: 0.00005, maxBlur: 0.006 },
     vignette:  { darkness: 0.55, offset: 0.85 },
     ca:        { offset: 0.0014 },
     exposure:  1.05,
   },
   stargazing: {
     bloom:     { strength: 0.9,  radius: 0.7,  threshold: 0.75 },
-    dof:       { focus: 60.0, aperture: 0.00003, maxBlur: 0.008 },
     vignette:  { darkness: 0.75, offset: 0.75 },
     ca:        { offset: 0.002  },
     exposure:  0.75,
@@ -233,7 +228,7 @@ export class Renderer {
     fxaa.material.uniforms['resolution'].value.set(1 / w, 1 / h);
     composer.addPass(fxaa);
 
-    const passes = { composer, bloom, dof, vigCA, fxaa };
+    const passes = { composer, bloom, vigCA, fxaa };
     this._composers.set(scene.uuid, passes);
     return composer;
   }
@@ -242,17 +237,12 @@ export class Renderer {
     const entry   = this._composers.get(scene.uuid);
     if (!entry) return;
     const profile = PostProfiles[profileName] || PostProfiles.grocery;
-    const { bloom, dof, vigCA } = entry;
+    const { bloom, vigCA } = entry;
 
     bloom.strength  = profile.bloom.strength;
     bloom.radius    = profile.bloom.radius;
     bloom.threshold = profile.bloom.threshold;
 
-    if (dof.uniforms) {
-      dof.uniforms['focus'].value    = profile.dof.focus;
-      dof.uniforms['aperture'].value = profile.dof.aperture;
-      dof.uniforms['maxblur'].value  = profile.dof.maxBlur;
-    }
 
     vigCA.material.uniforms.darkness.value = profile.vignette.darkness;
     vigCA.material.uniforms.offset.value   = profile.vignette.offset;

@@ -120,9 +120,8 @@ export class Stargazing extends Level {
   }
 
   _buildMoon(s) {
-    const mp   = skyPoint(220, 52);
-    const moon = new THREE.Mesh(
-      new THREE.SphereGeometry(4.5, 16, 12),
+    const mp = skyPoint(220, 68);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(3.0, 16, 12),
       Anime.mat(0xfff8e8, { roughness: 0.6 })
     );
     moon.position.copy(mp); s.add(moon); Anime.outline(moon, 0.02);
@@ -213,7 +212,7 @@ export class Stargazing extends Level {
       ctx.fillText(i + 1, 32, 33);
       const tex = (() => { const _t = new THREE.CanvasTexture(cv); _t.channel = 0; return _t; })();
       const lbl = new THREE.Mesh(
-        new THREE.PlaneGeometry(4, 4),
+        new THREE.PlaneGeometry(2, 2),
         new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
       );
       // offset label slightly from star
@@ -253,7 +252,7 @@ export class Stargazing extends Level {
     this._done      = false;
     this._hoveredStar = null;
     this._yaw   = 0;
-    this._pitch = 0.88;
+    this._pitch = 1.2;
 
     // reset all stars to white, hide rings
     this._starMeshes.forEach(mesh => {
@@ -264,7 +263,7 @@ export class Stargazing extends Level {
     });
 
     this.camera.fov = 78; this.camera.updateProjectionMatrix();
-    this.camera.position.set(0, 0.28, 0.4);
+    this.camera.position.set(0, 1.6, 0.4);
 
     if (!this.engine.input.locked) this.engine.input.requestLock();
     this._lockOnClick = () => { if (!this.engine.input.locked) this.engine.input.requestLock(); };
@@ -291,12 +290,12 @@ export class Stargazing extends Level {
     // look around
     this._yaw   -= inp.mouse.dx * this._sens;
     this._pitch -= inp.mouse.dy * this._sens;
-    this._pitch  = THREE.MathUtils.clamp(this._pitch, 0.16, Math.PI / 2 - 0.03);
+    this._pitch = THREE.MathUtils.clamp(this._pitch, 0.16, Math.PI / 2 + 0.4);
 
     const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this._yaw);
     const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -this._pitch);
     this.camera.quaternion.copy(qY).multiply(qX);
-    this.camera.position.set(0, 0.28, 0.4);
+    this.camera.position.set(0, 1.6, 0.4);
 
     // raycast
     this._ray.setFromCamera(new THREE.Vector2(0, 0), this.camera);

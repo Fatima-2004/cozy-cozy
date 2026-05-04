@@ -609,7 +609,7 @@ export function cookingBackground(scene) {
 
   // Warm late-afternoon kitchen
   scene.background = new THREE.Color(0xfff4e0);
-  scene.fog = new THREE.FogExp2(0xffedd0, 0.012);
+  scene.fog = new THREE.FogExp2(0xffedd0, 0.008);
 
   // Low ambient — pendant lights do the heavy lifting
   scene.add(new THREE.AmbientLight(0xffeedd, 0.28));
@@ -854,7 +854,7 @@ export function drivingBackground(scene) {
 // ─── PACKING ────────────────────────────────────────────────
 export function packingBackground(scene) {
   scene.background = new THREE.Color(0xf5e8ff);
-  scene.fog = new THREE.FogExp2(0xf0deff, 0.014);
+  scene.fog = new THREE.FogExp2(0xf0deff, 0.09);
 
   scene.add(new THREE.AmbientLight(0xffe0ff, 0.25));
   scene.add(new THREE.HemisphereLight(0xffd0ff, 0xddaaee, 0.20));

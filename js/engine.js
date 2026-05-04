@@ -1140,9 +1140,9 @@ export class HUD {
     btn.onmouseenter = () => { btn.style.transform = 'scale(1.05)'; btn.style.boxShadow = '0 6px 40px #a050ffaa,0 0 0 1px rgba(255,255,255,0.18) inset'; };
     btn.onmouseleave = () => { btn.style.transform = 'scale(1)';    btn.style.boxShadow = '0 4px 32px #a050ff66,0 0 0 1px rgba(255,255,255,0.12) inset'; };
     btn.addEventListener('click', () => {
-      this._overlay.style.display = 'none';
-      this._overlayVisible = false;
-      if (onBtn) onBtn();
+    this._overlay.style.display = 'none';
+    this._overlayVisible = false;
+    if (this._onStart) this._onStart();
     setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
     });
   }
@@ -1171,22 +1171,23 @@ export class HUD {
   }
 
   showOverlay(html, btnText, onBtn) {
-    this._overlay.innerHTML = html + `<button id="ovBtn" style="
-      margin-top:20px;padding:13px 38px;font-size:16px;font-weight:700;
-      border:none;border-radius:999px;cursor:pointer;
-      background:linear-gradient(135deg,#a050ff,#ff50a0);color:#fff;
-      box-shadow:0 4px 28px #a050ff66;letter-spacing:0.5px;">${btnText}</button>`;
-    this._overlay.style.display = 'flex';
-    this._overlay.style.pointerEvents = 'all';
-    this._overlayVisible = true;
-    this._overlay.querySelector('#ovBtn').onclick = () => {
-      this._overlay.style.display = 'none';
-      this._overlay.style.pointerEvents = 'none';
-      this._overlayVisible = false;
-      if (this._onStart) this._onStart();
+  const _cb = onBtn;
+  this._overlay.innerHTML = html + `<button id="ovBtn" style="
+    margin-top:20px;padding:13px 38px;font-size:16px;font-weight:700;
+    border:none;border-radius:999px;cursor:pointer;
+    background:linear-gradient(135deg,#a050ff,#ff50a0);color:#fff;
+    box-shadow:0 4px 28px #a050ff66;letter-spacing:0.5px;">${btnText}</button>`;
+  this._overlay.style.display = 'flex';
+  this._overlay.style.pointerEvents = 'all';
+  this._overlayVisible = true;
+  this._overlay.querySelector('#ovBtn').onclick = () => {
+    this._overlay.style.display = 'none';
+    this._overlay.style.pointerEvents = 'none';
+    this._overlayVisible = false;
+    if (_cb) _cb();
     setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
-    };
-  }
+  };
+}
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -453,7 +453,7 @@ export class FPController {
     this.camera      = camera;
     this.input       = input;
     this.speed       = 5;
-    this.sensitivity = 0.003;
+    this.sensitivity = 0.0045;
     this.yaw         = 0;
     this.pitch       = 0;
     this.height      = 1.65;
@@ -476,8 +476,8 @@ export class FPController {
     this._targetYaw   -= inp.mouse.dx * this.sensitivity;
     this._targetPitch -= inp.mouse.dy * this.sensitivity;
     this._targetPitch  = Math.max(-Math.PI / 2.1, Math.min(Math.PI / 2.1, this._targetPitch));
-    this.yaw   += (this._targetYaw   - this.yaw)   * Math.min(1, dt * 28);
-    this.pitch += (this._targetPitch - this.pitch)  * Math.min(1, dt * 28);
+    this.yaw   = this._targetYaw;
+    this.pitch = this._targetPitch;
 
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const rgt = new THREE.Vector3( Math.cos(this.yaw), 0, -Math.sin(this.yaw));

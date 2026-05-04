@@ -120,6 +120,9 @@ export class Stargazing extends Level {
     this._hintTex    = null;
     this._hintMesh   = null;
     this._hoveredStar = null;     // for zoom effect
+
+    this._ray = new THREE.Raycaster();
+    this._ray.far = SKY_R + 10;
   }
 
   // ══════════════════════════════════════════════════════════
@@ -643,11 +646,9 @@ export class Stargazing extends Level {
     }
 
     // ── raycast for hovered star ──────────────────────────
-    const ray=new THREE.Raycaster();
-    ray.setFromCamera(new THREE.Vector2(0,0),this.camera);
-    ray.far=SKY_R+10;
+    this._ray.setFromCamera(new THREE.Vector2(0,0),this.camera);
     const meshOnly=this._starMeshes.map(e=>e.mesh);
-    const hits=ray.intersectObjects(meshOnly,false);
+    const hits=this._ray.intersectObjects(meshOnly,false);
     this._hoveredStar=hits.length?hits[0].object:null;
 
     // ── FOV zoom when aiming at a valid star ──────────────

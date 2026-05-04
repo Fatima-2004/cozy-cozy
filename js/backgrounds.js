@@ -608,7 +608,7 @@ function _buildProduceDisplay(scene) {
 export function cookingBackground(scene) {
 
   // Warm late-afternoon kitchen
-  scene.background = new THREE.Color(0xfff4e0);
+  scene.background = new THREE.Color(0xd4b896);
   scene.fog = new THREE.FogExp2(0xffedd0, 0.008);
 
   // Low ambient — pendant lights do the heavy lifting

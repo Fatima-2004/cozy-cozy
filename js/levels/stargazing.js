@@ -122,7 +122,7 @@ export class Stargazing extends Level {
   _buildMoon(s) {
     const mp = skyPoint(220, 68);
     const moon = new THREE.Mesh(new THREE.SphereGeometry(3.0, 16, 12),
-      Anime.mat(0xfff8e8, { roughness: 0.6 })
+    new THREE.MeshBasicMaterial({ color: 0xfff8e8 })
     );
     moon.position.copy(mp); s.add(moon); Anime.outline(moon, 0.02);
     const halo = new THREE.Mesh(
@@ -130,7 +130,7 @@ export class Stargazing extends Level {
       new THREE.MeshBasicMaterial({ color: 0xfff0aa, transparent: true, opacity: 0.07, side: THREE.BackSide })
     );
     halo.position.copy(mp); s.add(halo);
-    const ml = new THREE.PointLight(0xc8d8ff, 0.45, 130);
+    const ml = new THREE.PointLight(0xc8d8ff, 0.12, 130);
     ml.position.copy(mp); s.add(ml);
   }
 
@@ -290,10 +290,10 @@ export class Stargazing extends Level {
     // look around
     this._yaw   -= inp.mouse.dx * this._sens;
     this._pitch -= inp.mouse.dy * this._sens;
-    this._pitch = THREE.MathUtils.clamp(this._pitch, 0.16, Math.PI / 2 + 0.4);
+    this._pitch = THREE.this._pitch = THREE.MathUtils.clamp(this._pitch, 0.3, Math.PI / 2 + 0.3);.clamp(this._pitch, 0.16, Math.PI / 2 + 0.4);
 
     const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), this._yaw);
-    const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -this._pitch);
+    const qX = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), this._pitch);
     this.camera.quaternion.copy(qY).multiply(qX);
     this.camera.position.set(0, 1.6, 0.4);
 

@@ -57,7 +57,7 @@ export function groceryBackground(scene) {
   // ── 3. Windows on front wall (z≈6.7) ──────────────────────
   // Outside sky canvas visible through each window
   const outsideCanvas = _paintOutsideView();
-  const outsideTex    = new THREE.CanvasTexture(outsideCanvas);
+  const outsideTex    = (() => { const _t = new THREE.CanvasTexture(outsideCanvas); _t.channel = 0; return _t; })();
 
   [-7, 0, 7].forEach(x => {
     // Window glass pane — shows the outside view
@@ -114,7 +114,7 @@ export function groceryBackground(scene) {
     const refPanel = new THREE.Mesh(
       new THREE.PlaneGeometry(3.2, 2.4),
       new THREE.MeshBasicMaterial({
-        map:         _paintFridgePanel(),
+        ap: (() => { const _t = new THREE.CanvasTexture(_paintFridgePanel()); _t.channel = 0; return _t; })(),
         transparent: false,
       })
     );
@@ -137,7 +137,7 @@ export function groceryBackground(scene) {
   const matCanvas = _paintEntranceMat();
   const entranceMat = new THREE.Mesh(
     new THREE.PlaneGeometry(3.2, 1.2),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(matCanvas), transparent: true })
+    new THREE.MeshBasicMaterial({ map: (() => { const _t = new THREE.CanvasTexture(matCanvas); _t.channel = 0; return _t; })(), transparent: true })
   );
   entranceMat.rotation.x = -Math.PI / 2;
   entranceMat.position.set(0, 0.002, 5.2);
@@ -402,7 +402,7 @@ function _buildNoticeboard(scene, x, y, z) {
   const corkCanvas = _paintCorkboard();
   const cork = new THREE.Mesh(
     new THREE.PlaneGeometry(1.75, 1.28),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(corkCanvas) })
+    new THREE.MeshBasicMaterial({ map: (() => { const _t = new THREE.CanvasTexture(corkCanvas); _t.channel = 0; return _t; })() })
   );
   cork.rotation.y = Math.PI / 2;
   cork.position.x = 0.04;
@@ -598,7 +598,7 @@ function _buildProduceDisplay(scene) {
 
   const sign = new THREE.Mesh(
     new THREE.PlaneGeometry(1.1, 0.34),
-    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(signCanvas), transparent: true })
+    new THREE.MeshBasicMaterial({ map: (() => { const _t = new THREE.CanvasTexture(signCanvas); _t.channel = 0; return _t; })(), transparent: true })
   );
   sign.position.set(8.8, 1.22, 3.06);
   sign.userData.isBillboard = true;
@@ -636,7 +636,8 @@ export function cookingBackground(scene) {
   });
 
   // Painted outside canvas in its place
-  const outsideTex = new THREE.CanvasTexture(_paintKitchenWindow());
+const outsideTex = (() => { const _t = new THREE.CanvasTexture(_paintKitchenWindow()); _t.channel = 0; return _t; })();
+
   const windowView = new THREE.Mesh(
     new THREE.PlaneGeometry(2.8, 1.9),
     new THREE.MeshBasicMaterial({ map: outsideTex })
@@ -823,7 +824,7 @@ export function drivingBackground(scene) {
       ctx.translate(-bx,-by); ctx.beginPath();
       ctx.arc(bx,by,rx,0,Math.PI*2); ctx.fill(); ctx.restore();
     }
-    const tex = new THREE.CanvasTexture(cv);
+    const tex = (() => { const _t = new THREE.CanvasTexture(cv); _t.channel = 0; return _t; })();
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(4,4);
     const plane = new THREE.Mesh(
@@ -844,7 +845,6 @@ export function drivingBackground(scene) {
       _t += dt;
       clouds.forEach(({tex,speed}) => {
         tex.offset.x += dt*speed*0.0006;
-        tex.needsUpdate = true;
       });
       dome.position.y = -20; // keep horizon centred
     }
@@ -870,7 +870,7 @@ export function packingBackground(scene) {
   scene.add(lampFill);
 
   // Window on back wall — outside view
-  const outsideTex = new THREE.CanvasTexture(_paintPackingWindow());
+const outsideTex = (() => { const _t = new THREE.CanvasTexture(_paintPackingWindow()); _t.channel = 0; return _t; })();
   const windowView = new THREE.Mesh(
     new THREE.PlaneGeometry(2.8, 1.8),
     new THREE.MeshBasicMaterial({ map: outsideTex })

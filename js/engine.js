@@ -358,7 +358,8 @@ export const Anime = {
       id.data[i+3] = 255;
     }
     ctx.putImageData(id, 0, 0);
-    const tex = new THREE.CanvasTexture(canvas);
+    const tex = (() => { const _t = new THREE.CanvasTexture(canvas); _t.channel = 0; return _t; })();
+    tex.channel = 0;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.channel = 0; 
     return tex;
@@ -735,7 +736,7 @@ export const Build = {
       grad.addColorStop(0, 'rgba(255,255,230,1)');
       grad.addColorStop(1, 'rgba(255,200,80,0)');
       fctx.fillStyle = grad; fctx.fillRect(0,0,64,64);
-      const flareTex = new THREE.CanvasTexture(fc);
+      const flareTex = (() => { const _t = new THREE.CanvasTexture(fc); _t.channel = 0; return _t; })();
       lensflare.addElement(new LensflareElement(flareTex, 180, 0));
       lensflare.addElement(new LensflareElement(flareTex, 60, 0.4));
       lensflare.addElement(new LensflareElement(flareTex, 25, 0.8));
@@ -748,9 +749,7 @@ export const Build = {
   pointLight(scene, x, y, z, color = 0xffcc66, intensity = 1.5, distance = 8) {
     const light = new THREE.PointLight(color, intensity, distance, 2);
     light.position.set(x, y, z);
-    light.castShadow = true;
-    light.shadow.mapSize.setScalar(512);
-    light.shadow.bias = -0.002;
+    light.castShadow = false;
     scene.add(light);
     return light;
   },
@@ -770,7 +769,7 @@ export const Build = {
     ctx.fillText(text, 140, 36);
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1.5, 0.38),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ map: (() => { const _t = new THREE.CanvasTexture(canvas); _t.channel = 0; return _t; })(), transparent: true, depthWrite: false }),
     );
     mesh.position.set(x, y, z); scene.add(mesh);
     mesh.userData.isBillboard = true;
@@ -933,7 +932,7 @@ export const Build = {
         ctx.restore();
       }
 
-      const tex = new THREE.CanvasTexture(cv);
+      const tex = (() => { const _t = new THREE.CanvasTexture(cv); _t.channel = 0; return _t; })();
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(3, 3);
 

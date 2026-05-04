@@ -339,7 +339,7 @@ export class Stargazing extends Level {
     this._hintCanvas=document.createElement('canvas');
     this._hintCanvas.width=220; this._hintCanvas.height=260;
     this._hintCtx=this._hintCanvas.getContext('2d');
-    this._hintTex=new THREE.CanvasTexture(this._hintCanvas);
+    this._hintTex=(() => { const _t = new THREE.CanvasTexture(this._hintCanvas); _t.channel = 0; return _t; })();
     const mat=new THREE.MeshBasicMaterial({map:this._hintTex,transparent:true,
       depthWrite:false,depthTest:false});
     this._hintMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.0,2.4),mat);

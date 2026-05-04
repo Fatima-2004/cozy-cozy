@@ -299,7 +299,7 @@ export class Packing extends Level {
       ctx.fillStyle='#ff8844';
       for(let cx=8;cx<120;cx+=18){ ctx.beginPath(); ctx.arc(cx,68,8,0,Math.PI*2); ctx.fill(); }
       const painting=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.85),
-        new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));
+        new THREE.MeshBasicMaterial({map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })()}));
       painting.position.set(3,2.5,-8.86); s.add(painting);
     }
 

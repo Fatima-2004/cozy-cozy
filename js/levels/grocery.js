@@ -89,7 +89,7 @@ function priceTag(scene, text, x, y, z) {
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,64,24);
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(0.28,0.10),
-    new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false })
+    new THREE.MeshBasicMaterial({ map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })(), transparent:true, depthWrite:false })
   );
   mesh.position.set(x,y,z); mesh.userData.isBillboard=true; scene.add(mesh);
 }
@@ -103,7 +103,7 @@ function sectionStrip(scene, text, color, x, y, z) {
   ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(text,128,20);
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(1.45,0.09),
-    new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false, side:THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })(), transparent:true, depthWrite:false, side:THREE.DoubleSide })
   );
   mesh.position.set(x,y,z); mesh.userData.isBillboard=true; scene.add(mesh);
 }
@@ -118,7 +118,7 @@ function aisleSign(scene, text, subtext, x, z) {
   ctx.font='15px sans-serif'; ctx.fillStyle='#aaffcc'; ctx.fillText(subtext,160,66);
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(2.1,0.63),
-    new THREE.MeshBasicMaterial({ map:new THREE.CanvasTexture(c), transparent:true, side:THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({ map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })(), transparent:true, side:THREE.DoubleSide })
   );
   mesh.position.set(x,3.62,z); mesh.userData.isBillboard=true; scene.add(mesh);
 }

@@ -320,7 +320,7 @@ export class Driving extends Level {
     }
     const banner = new THREE.Mesh(
       new THREE.PlaneGeometry(ROAD_W + 2, 1.0),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(bc), side: THREE.DoubleSide })
+      new THREE.MeshBasicMaterial({ map: (() => { const _t = new THREE.CanvasTexture(bc); _t.channel = 0; return _t; })(), side: THREE.DoubleSide })
     );
     banner.position.set(0, 5.5, fz); s.add(banner);
     [-ROAD_W / 2 - 0.6, ROAD_W / 2 + 0.6].forEach(px => {
@@ -396,7 +396,7 @@ export class Driving extends Level {
     this._speedoCanvas = document.createElement('canvas');
     this._speedoCanvas.width = 128; this._speedoCanvas.height = 128;
     this._speedoCtx = this._speedoCanvas.getContext('2d');
-    this._speedoTex = new THREE.CanvasTexture(this._speedoCanvas);
+    this._speedoTex = (() => { const _t = new THREE.CanvasTexture(this._speedoCanvas); _t.channel = 0; return _t; })();
     this._drawSpeedo(0);
     const dial = new THREE.Mesh(
       new THREE.CircleGeometry(0.088, 16),

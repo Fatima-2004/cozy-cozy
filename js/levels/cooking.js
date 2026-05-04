@@ -163,7 +163,7 @@ export class Cooking extends Level {
       for(let day=1;day<=30;day++){const row=Math.floor((day+5)/7),col=(day+5)%7; ctx.fillText(day,12+col*16,68+row*16);}
       ctx.fillStyle='#ff6688'; ctx.font='bold 14px monospace'; ctx.fillText('15',12+6*16,68+2*16);
       const cal=new THREE.Mesh(new THREE.PlaneGeometry(0.8,1.0),
-        new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));
+        new THREE.MeshBasicMaterial({map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })()}));
       cal.position.set(3,2.5,-6.88); s.add(cal);
     }
   }
@@ -553,7 +553,7 @@ export class Cooking extends Level {
       ctx.fillStyle='#ff3322'; ctx.fillRect(0,0,64,80);
       ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif';
       ctx.textAlign='center'; ctx.fillText('TOMATO',32,28); ctx.fillText('SAUCE',32,44);
-      jar.material=new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(c),roughness:0.5});
+      jar.material=new THREE.MeshStandardMaterial({map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })(),roughness:0.5});
     }
     // spreading knife/spatula
     const spatBlade=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.006,0.32),Anime.mat(0xccccdd,0.1,0.6));
@@ -584,7 +584,7 @@ export class Cooking extends Level {
     this._sauceCanvas.width=256; this._sauceCanvas.height=256;
     this._sauceCtx=this._sauceCanvas.getContext('2d');
     this._resetSauceCanvas();
-    this._sauceTex=new THREE.CanvasTexture(this._sauceCanvas);
+    this._sauceTex=(() => { const _t = new THREE.CanvasTexture(this._sauceCanvas); _t.channel = 0; return _t; })();
 
     // PlaneGeometry exactly matching breadTop dimensions, sits right on top
     this._breadPlane=new THREE.Mesh(
@@ -758,7 +758,7 @@ export class Cooking extends Level {
         ctx.fillText(ln,70,18+i*12);
       });
       const cb=new THREE.Mesh(new THREE.PlaneGeometry(1.3,0.82),
-        new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));
+        new THREE.MeshBasicMaterial({map:(() => { const _t = new THREE.CanvasTexture(c); _t.channel = 0; return _t; })()}));
       cb.position.set(8.84,2.2,1); cb.rotation.y=Math.PI/2; s.add(cb);
     }
 

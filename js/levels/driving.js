@@ -15,6 +15,7 @@
 //   • FIX: collision box Z extents corrected (front of car is at lower Z)
 // ============================================================
 
+import { drivingBackground } from '../backgrounds.js';
 import * as THREE from 'three';
 import { Level, Anime, Build } from '../engine.js';
 
@@ -105,10 +106,8 @@ export class Driving extends Level {
   init() {
     const s = this.scene;
 
-    s.background = new THREE.Color(0x87ceeb);
-    s.fog = new THREE.FogExp2(0xb0d8ff, 0.010);
-    Build.sunLight(s, 0xfffbe8, 2.0);
-    s.add(new THREE.AmbientLight(0xd0eeff, 0.85));
+    this._sky = drivingBackground(this.scene);
+
 
     // wide grass ground plane
     const ground = new THREE.Mesh(
@@ -551,7 +550,9 @@ export class Driving extends Level {
   // ══════════════════════════════════════════════════════════
   //  UPDATE
   // ══════════════════════════════════════════════════════════
+  
   update(dt) {
+    this._sky?.update(dt);
     if (this._done) return;
     const inp = this.engine.input;
 

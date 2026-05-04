@@ -8,6 +8,7 @@
 //  Items are finished picnic goods (not raw ingredients).
 // ============================================================
 
+import { packingBackground } from '../backgrounds.js';
 import * as THREE from 'three';
 import { Level, Anime, Build, FPController, Interactor } from '../engine.js';
 
@@ -66,9 +67,8 @@ export class Packing extends Level {
     const s = this.scene;
 
     s.background = new THREE.Color(0xffe8f0);
-    s.fog = new THREE.FogExp2(0xffd8e8, 0.045);
-    Build.sunLight(s, 0xfffce0, 2.0);
-    s.add(new THREE.AmbientLight(0xffeedd, 1.0));
+    this._sky = packingBackground(this.scene);
+
 
     this._buildRoom(s);
     this._buildTable(s);
@@ -466,6 +466,8 @@ export class Packing extends Level {
   //  UPDATE
   // ══════════════════════════════════════════════════════════
   update(dt) {
+    this._sky?.update(dt);
+
     this.fp.update(dt,this.collidables);
 
     // ── held item bobs in front of camera ─────────────────

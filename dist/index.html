@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>✨ Starry Picnic</title>
+
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width:100%;height:100%;background:#0a0520;overflow:hidden;
+      font-family:'Segoe UI','Helvetica Neue',sans-serif; }
+    #canvas { display:block;cursor:crosshair;position:fixed;top:0;left:0; }
+    #hud    { position:fixed;inset:0;pointer-events:none;z-index:10; }
+    #controls { position:fixed;bottom:16px;right:16px;font-size:11px;
+      color:rgba(255,255,255,0.32);text-align:right;pointer-events:none;
+      z-index:5;line-height:1.7; }
+    #loader { position:fixed;inset:0;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;background:#0a0520;z-index:100;
+      gap:18px;color:#fff;font-size:18px;letter-spacing:2px;transition:opacity 0.5s; }
+    #loader-bar-wrap { width:220px;height:6px;background:rgba(255,255,255,0.12);
+      border-radius:999px;overflow:hidden; }
+    #loader-bar { height:100%;width:0%;background:linear-gradient(90deg,#b060ff,#ff60a0);
+      border-radius:999px;transition:width 0.3s ease; }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+  }
+}
+</script>
+  <script type="module" crossorigin src="./assets/index-CGPkoWKn.js"></script>
+</head>
+<body>
+
+  <div id="loader">
+    <div style="font-size:36px">✨</div>
+    <div>STARRY PICNIC</div>
+    <div id="loader-bar-wrap"><div id="loader-bar"></div></div>
+    <div style="font-size:12px;opacity:0.5" id="loader-status">Loading…</div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  <div id="hud"></div>
+  <div id="controls">
+    WASD · move &nbsp;|&nbsp; Mouse · look<br>
+    E / Click · interact &nbsp;|&nbsp; 1–5 · skip level
+  </div>
+
+</body>
+</html>

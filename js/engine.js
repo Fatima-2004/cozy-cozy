@@ -22,12 +22,13 @@ import { LensflareElement, Lensflare } from 'three/examples/jsm/objects/Lensflar
 // ─────────────────────────────────────────────────────────────
 export const PostProfiles = {
   grocery: {
-    bloom:     { strength: 0.08, radius: 0.3,  threshold: 0.94 },
-    ssao:      { radius: 0.12, minDistance: 0.001, maxDistance: 0.08 },
-    dof:       { focus: 18.0, aperture: 0.00008, maxBlur: 0.003 },
-    vignette:  { darkness: 0.45, offset: 0.95 },
-    ca:        { offset: 0.0008 },
-    exposure:  0.9,
+  bloom:    { strength: 0.06, radius: 0.25, threshold: 0.96 }, // almost no bloom
+  ssao:     { radius: 0.14, minDistance: 0.001, maxDistance: 0.09 },
+  dof:      { focus: 18.0, aperture: 0.00006, maxBlur: 0.002 },
+  vignette: { darkness: 0.38, offset: 1.0 },
+  ca:       { offset: 0.0005 },
+  exposure: 0.78,  // darker overall — most important change
+
   },
   cooking: {
     bloom:     { strength: 0.18, radius: 0.5,  threshold: 0.88 },
@@ -66,6 +67,34 @@ export const PostProfiles = {
 // ─────────────────────────────────────────────────────────────
 //  CUSTOM SHADERS
 // ─────────────────────────────────────────────────────────────
+const SkyGradientShader = {
+  uniforms: {
+    topColor:    { value: new THREE.Color(0x8ec5e8) },
+    midColor:    { value: new THREE.Color(0xffd6a5) },
+    botColor:    { value: new THREE.Color(0xffecd2) },
+    midPoint:    { value: 0.45 },
+    exponent:    { value: 1.6  },
+  },
+  vertexShader: `
+    varying vec3 vWorldPos;
+    void main() {
+      vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 topColor, midColor, botColor;
+    uniform float midPoint, exponent;
+    varying vec3 vWorldPos;
+    void main() {
+      float h = normalize(vWorldPos).y * 0.5 + 0.5;
+      vec3 col = h > midPoint
+        ? mix(midColor, topColor, pow((h - midPoint) / (1.0 - midPoint), exponent))
+        : mix(botColor, midColor, pow(h / midPoint, exponent));
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `,
+};
 
 const VignetteCAShader = {
   uniforms: {
@@ -99,6 +128,7 @@ const VignetteCAShader = {
     }
   `,
 };
+
 
 function celShaderPatch(shader, steps = 3, rimPower = 2.2) {
   shader.fragmentShader = shader.fragmentShader.replace(
@@ -423,7 +453,7 @@ export class FPController {
     this.camera      = camera;
     this.input       = input;
     this.speed       = 5;
-    this.sensitivity = 0.0018;
+    this.sensitivity = 0.003;
     this.yaw         = 0;
     this.pitch       = 0;
     this.height      = 1.65;
@@ -846,6 +876,126 @@ export const Build = {
     scene.add(pts);
     return pts;
   },
+  /**
+   * animeSky(scene, preset)
+   * Presets: 'day' | 'golden' | 'night' | 'dusk' | 'overcast'
+   * Returns { dome, clouds, update(dt) }
+   */
+  animeSky(scene, preset = 'day') {
+    const PRESETS = {
+      day:      { top:0x5ab3e8, mid:0xa8d8f0, bot:0xe8f4fb, fog:0xc8e8f5, fogNear:30, fogFar:90,  cloudColor:0xffffff, cloudOpacity:0.82 },
+      golden:   { top:0x1a3a6e, mid:0xff7e44, bot:0xffcc66, fog:0xff9955, fogNear:20, fogFar:70,  cloudColor:0xffeebb, cloudOpacity:0.65 },
+      dusk:     { top:0x1a0a3a, mid:0xc0446e, bot:0xff9966, fog:0xcc6644, fogNear:20, fogFar:65,  cloudColor:0xffaaaa, cloudOpacity:0.55 },
+      night:    { top:0x04021a, mid:0x0d0930, bot:0x1a1240, fog:0x0d0928, fogNear:15, fogFar:55,  cloudColor:0x6655aa, cloudOpacity:0.30 },
+      overcast: { top:0x8899aa, mid:0xaabbcc, bot:0xccddee, fog:0xbbccdd, fogNear:18, fogFar:60,  cloudColor:0xddeeff, cloudOpacity:0.70 },
+    };
+
+    const p = PRESETS[preset] ?? PRESETS.day;
+
+    // Sky dome — large inward-facing sphere with gradient shader
+    const domeMat = new THREE.ShaderMaterial({
+      uniforms: {
+        topColor: { value: new THREE.Color(p.top) },
+        midColor: { value: new THREE.Color(p.mid) },
+        botColor: { value: new THREE.Color(p.bot) },
+        midPoint: { value: 0.42 },
+        exponent: { value: 1.8  },
+      },
+      vertexShader:   SkyGradientShader.vertexShader,
+      fragmentShader: SkyGradientShader.fragmentShader,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(140, 32, 16), domeMat);
+    dome.renderOrder = -1;
+    scene.add(dome);
+
+    // Fog to blend into horizon
+    scene.fog = new THREE.Fog(p.fog, p.fogNear, p.fogFar);
+
+    // Cloud layer — 3 planes at different heights & speeds using canvas textures
+    const clouds = [];
+    const cloudHeights = [28, 34, 40];
+    const cloudSpeeds  = [0.9, 0.5, 0.25];
+    const cloudScales  = [180, 220, 260];
+
+    cloudHeights.forEach((cy, i) => {
+      const size = 512;
+      const cv   = document.createElement('canvas');
+      cv.width = cv.height = size;
+      const ctx  = cv.getContext('2d');
+
+      // Paint soft procedural cloud blobs
+      ctx.clearRect(0, 0, size, size);
+      const numBlobs = 6 + i * 2;
+      for (let b = 0; b < numBlobs; b++) {
+        const bx  = Math.random() * size;
+        const by  = Math.random() * size;
+        const rx  = 60 + Math.random() * 120;
+        const ry  = 30 + Math.random() * 55;
+        const grad = ctx.createRadialGradient(bx, by, 0, bx, by, rx);
+        grad.addColorStop(0,   `rgba(255,255,255,${0.55 + Math.random() * 0.35})`);
+        grad.addColorStop(0.5, `rgba(255,255,255,${0.15 + Math.random() * 0.2})`);
+        grad.addColorStop(1,   'rgba(255,255,255,0)');
+        ctx.fillStyle = grad;
+        ctx.save();
+        ctx.translate(bx, by);
+        ctx.scale(1, ry / rx);
+        ctx.translate(-bx, -by);
+        ctx.beginPath();
+        ctx.arc(bx, by, rx, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const tex = new THREE.CanvasTexture(cv);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(3, 3);
+
+      const mat = new THREE.MeshBasicMaterial({
+        map:         tex,
+        transparent: true,
+        opacity:     p.cloudOpacity * (1 - i * 0.15),
+        depthWrite:  false,
+        color:       new THREE.Color(p.cloudColor),
+        blending:    THREE.NormalBlending,
+      });
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(cloudScales[i], cloudScales[i]), mat);
+      plane.rotation.x = -Math.PI / 2;
+      plane.position.y = cy;
+      plane.renderOrder = -1;
+      scene.add(plane);
+      clouds.push({ plane, speed: cloudSpeeds[i], tex });
+    });
+
+    // Horizon haze band — thin cylinder to soften land/sky join
+    const hazeMat = new THREE.MeshBasicMaterial({
+      color:       new THREE.Color(p.bot).lerp(new THREE.Color(p.fog), 0.5),
+      transparent: true,
+      opacity:     0.45,
+      depthWrite:  false,
+      side:        THREE.BackSide,
+    });
+    const haze = new THREE.Mesh(new THREE.CylinderGeometry(138, 138, 18, 32, 1, true), hazeMat);
+    haze.position.y = 6;
+    haze.renderOrder = -1;
+    scene.add(haze);
+
+    return {
+      dome,
+      clouds,
+      /** Call this each frame with delta time to animate clouds */
+      update(dt) {
+        clouds.forEach(({ plane, speed, tex }) => {
+          tex.offset.x += dt * speed * 0.0008;
+          tex.offset.y += dt * speed * 0.0003;
+          tex.needsUpdate = true;
+        });
+        // Dome follows camera so horizon is always centred
+        dome.position.copy(scene.children[0]?.position ?? new THREE.Vector3());
+      },
+    };
+  },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -1158,6 +1308,73 @@ export class Engine {
     this.go(name);
   }
 
+  _toggleDevPanel() {
+  if (this._devPanel) {
+    this._devPanel.remove();
+    this._devPanel = null;
+    if (this.currentLevel?.fp) {
+      document.getElementById('canvas').requestPointerLock();
+    }
+    return;
+  }
+
+  document.exitPointerLock();
+
+  const panel = document.createElement('div');
+  panel.style.cssText = `
+    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:rgba(8,4,28,0.97);border:1.5px solid rgba(180,140,255,0.4);
+    border-radius:20px;padding:28px 36px;z-index:9999;
+    font-family:'Segoe UI',sans-serif;color:#fff;
+    box-shadow:0 8px 48px rgba(100,40,220,0.4);min-width:280px;
+    backdrop-filter:blur(16px);
+  `;
+  panel.innerHTML = `
+    <div style="font-size:20px;font-weight:900;margin-bottom:6px;
+      background:linear-gradient(135deg,#ffd700,#c890ff);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent">
+      ✨ Dev Level Select</div>
+    <div style="font-size:12px;color:#888;margin-bottom:20px">
+      Press \` to close · changes take effect immediately</div>
+    <div id="devLevelBtns" style="display:flex;flex-direction:column;gap:10px"></div>
+  `;
+
+  const levels = [
+    { key:'grocery',    icon:'🛒', label:'Grocery Run'    },
+    { key:'cooking',    icon:'🍳', label:'Cooking'        },
+    { key:'packing',    icon:'🧺', label:'Packing'        },
+    { key:'driving',    icon:'🚗', label:'Driving'        },
+    { key:'stargazing', icon:'🌟', label:'Stargazing'     },
+  ];
+
+  const btns = panel.querySelector('#devLevelBtns');
+  levels.forEach(({ key, icon, label }) => {
+    const isCurrent = this.currentLevel === this._levels[key]?.level;
+    const btn = document.createElement('button');
+    btn.style.cssText = `
+      padding:11px 22px;border-radius:12px;border:none;cursor:pointer;
+      font-size:15px;font-weight:600;text-align:left;
+      background:${isCurrent ? 'linear-gradient(135deg,#6030cc,#cc50a0)' : 'rgba(255,255,255,0.07)'};
+      color:#fff;transition:background 0.15s;
+      border:1px solid ${isCurrent ? 'transparent' : 'rgba(255,255,255,0.1)'};
+    `;
+    btn.textContent = `${icon}  ${label}${isCurrent ? '  ◀ current' : ''}`;
+    btn.onmouseenter = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,0.14)'; };
+    btn.onmouseleave = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,0.07)'; };
+    btn.onclick = () => {
+      this._devPanel.remove();
+      this._devPanel = null;
+      this.go(key);
+      setTimeout(() => {
+        if (this.currentLevel?.fp) document.getElementById('canvas').requestPointerLock();
+      }, 100);
+    };
+    btns.appendChild(btn);
+  });
+
+  document.body.appendChild(panel);
+  this._devPanel = panel;
+}
   _frame(dt) {
     const lvl = this.currentLevel;
     if (!lvl) return;
@@ -1186,5 +1403,11 @@ export class Engine {
   // Set the callback that fires when the player clicks "Click to Begin"
   onStart(fn) {
     this.hud.onStart(fn);
+
+    // Dev level selector — press backtick ` to toggle
+this._devPanel = null;
+document.addEventListener('keydown', e => {
+  if (e.code === 'Backquote') this._toggleDevPanel();
+});
   }
 }

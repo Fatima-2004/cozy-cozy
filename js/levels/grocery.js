@@ -2,7 +2,7 @@
 //  STARRY PICNIC — Grocery Level
 //  Compatible with engine.js (Level / FPController / Interactor)
 // ============================================================
-
+import { groceryBackground } from '../backgrounds.js';
 import * as THREE from 'three';
 import { Level, Anime, Build, FPController, Interactor } from '../engine.js';
 
@@ -140,20 +140,7 @@ export class Grocery extends Level {
   // ─────────────────────────────────────────────────────────
   init() {
     const s = this.scene;
-    s.background = new THREE.Color(0xd0ccc8);
-    s.fog = new THREE.Fog(0xd0ccc8, 22, 60);
-
-    s.add(new THREE.AmbientLight(0xffffff, 0.45));
-    s.add(new THREE.HemisphereLight(0xffffff, 0x889977, 0.30));
-
-    // Fluorescent ceiling strips
-    [-12,-6,0].forEach(z => [-3,3].forEach(x => {
-      const pl = new THREE.PointLight(0xfff8e8, 1.8, 10, 1.5);
-      pl.position.set(x,3.7,z); pl.castShadow=true; pl.shadow.mapSize.setScalar(256); s.add(pl);
-      const tube = new THREE.Mesh(new THREE.BoxGeometry(1.1,0.06,0.12), new THREE.MeshBasicMaterial({color:0xffffee}));
-      tube.position.set(x,3.92,z); s.add(tube);
-    }));
-
+    this._sky = groceryBackground(this.scene);
     this._buildStore(s);
     this._buildShelves(s);
     this._buildFiller(s);
@@ -166,21 +153,22 @@ export class Grocery extends Level {
   // ─────────────────────────────────────────────────────────
   _buildStore(s) {
     // Checkerboard floor
-    const t1 = stdMat(0xc8c6c2,0.5,0.04), t2 = stdMat(0xbebbb6,0.5,0.04);
-    const tGeo = new THREE.PlaneGeometry(1.6,1.6);
+    const t1 = stdMat(0xe8e0cc, 0.55, 0.03);  // warm cream
+    const t2 = stdMat(0xd4ccb4, 0.55, 0.03);  // slightly darker warm beige    const tGeo = new THREE.PlaneGeometry(1.6,1.6);
+    const tGeo = new THREE.PlaneGeometry(1.6, 1.6);
     for(let x=-9;x<=9;x++) for(let z=-17;z<=5;z++) {
       const m = new THREE.Mesh(tGeo,(x+z+50)%2 ? t1:t2);
       m.rotation.x=-Math.PI/2; m.position.set(x*1.6,0.001,z*1.6); m.receiveShadow=true; s.add(m);
     }
 
     // Ceiling
-    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30,28), stdMat(0xf5f5f5,1));
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(30,28), stdMat(0xf5ede0, 1));
     ceil.rotation.x = Math.PI/2; ceil.position.set(0,4,-6); s.add(ceil);
     for(let x=-9;x<=9;x+=3) { const g=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.03,28),new THREE.MeshBasicMaterial({color:0xcccccc})); g.position.set(x,3.97,-6); s.add(g); }
     for(let z=-17;z<=5;z+=3) { const g=new THREE.Mesh(new THREE.BoxGeometry(30,0.03,0.03),new THREE.MeshBasicMaterial({color:0xcccccc})); g.position.set(0,3.97,z); s.add(g); }
 
     // Walls
-    const wMat = new THREE.MeshStandardMaterial({color:0xc8c4be,roughness:0.95});
+    const wMat = new THREE.MeshStandardMaterial({color:0xf0e4d0, roughness:0.92});
     [[0,2,-19,30,4,0.3],[0,2,7,30,4,0.3],[-15,2,-6,0.3,4,30],[15,2,-6,0.3,4,30]]
       .forEach(([x,y,z,w,h,d]) => {
         const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wMat);
@@ -456,6 +444,7 @@ export class Grocery extends Level {
 
   // ─────────────────────────────────────────────────────────
   update(dt) {
+    this._sky?.update(dt);
     // FPController uses this.collidables (THREE.Box3 array)
     this.fp.update(dt, this.collidables);
 

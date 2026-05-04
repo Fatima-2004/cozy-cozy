@@ -10,6 +10,7 @@
 //   5. Make lemonade            (squeeze 4 lemons into jug)
 // ============================================================
 
+import { cookingBackground } from '../backgrounds.js';
 import * as THREE from 'three';
 import { Level, Anime, Build, FPController, Interactor } from '../engine.js';
 
@@ -83,10 +84,7 @@ export class Cooking extends Level {
   // ══════════════════════════════════════════════════════════
   init() {
     const s = this.scene;
-    s.background = new THREE.Color(0xfff4e0);
-    s.fog = new THREE.FogExp2(0xffe8c0, 0.038);
-    Build.sunLight(s, 0xfff8d0, 1.9);
-    s.add(new THREE.AmbientLight(0xffeedd, 0.85));
+    this._sky = cookingBackground(this.scene);
 
     this._buildFloor(s);
     this._buildWalls(s);
@@ -974,7 +972,9 @@ export class Cooking extends Level {
   // ══════════════════════════════════════════════════════════
   //  UPDATE
   // ══════════════════════════════════════════════════════════
+  
   update(dt) {
+    this._sky?.update(dt);
     this.fp.update(dt,this.collidables);
 
     // Avicula bob

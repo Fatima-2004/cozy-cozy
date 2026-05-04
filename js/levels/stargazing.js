@@ -12,7 +12,7 @@
 //   • Proximity glow: crosshair near a star makes it pulse harder
 //   • Zoom-in effect when aiming at a valid star
 // ============================================================
-
+import { stargazingBackground } from '../backgrounds.js';
 import * as THREE from 'three';
 import { Level, Anime, Build } from '../engine.js';
 
@@ -126,12 +126,7 @@ export class Stargazing extends Level {
   init() {
     const s = this.scene;
 
-    s.background = new THREE.Color(0x04021a);
-    s.fog = new THREE.FogExp2(0x08043a, 0.015);
-    s.add(new THREE.AmbientLight(0x102060, 0.75));
-    const moon = new THREE.DirectionalLight(0xc8d8ff, 0.55);
-    moon.position.set(-20,40,30); s.add(moon);
-
+    this._sky = stargazingBackground(this.scene);
     this._buildSkyDome(s);
     this._buildBackgroundStars(s);
     this._buildMilkyWay(s);
@@ -623,6 +618,7 @@ export class Stargazing extends Level {
   //  UPDATE
   // ══════════════════════════════════════════════════════════
   update(dt) {
+    this._sky?.update(dt);
     const inp=this.engine.input;
     const t=performance.now()/1000;
 

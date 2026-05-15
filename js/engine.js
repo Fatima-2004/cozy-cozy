@@ -21,35 +21,52 @@ import { LensflareElement, Lensflare } from 'three/examples/jsm/objects/Lensflar
 // ─────────────────────────────────────────────────────────────
 export const PostProfiles = {
   grocery: {
-  bloom:    { strength: 0.06, radius: 0.25, threshold: 0.96 }, // almost no bloom
-  vignette: { darkness: 0.38, offset: 1.0 },
-  ca:       { offset: 0.0005 },
-  exposure: 0.78,  // darker overall — most important change
-
+    bloom:    { strength: 0.06, radius: 0.25, threshold: 0.96 },
+    vignette: { darkness: 0.38, offset: 1.0 },
+    ca:       { offset: 0.0005 },
+    exposure: 0.78,
   },
   cooking: {
-    bloom:     { strength: 0.18, radius: 0.5,  threshold: 0.88 },
-    vignette:  { darkness: 0.5,  offset: 0.9  },
-    ca:        { offset: 0.001  },
-    exposure:  1.0,
+    bloom:    { strength: 0.18, radius: 0.5,  threshold: 0.88 },
+    vignette: { darkness: 0.5,  offset: 0.9  },
+    ca:       { offset: 0.001  },
+    exposure: 1.0,
   },
   packing: {
-    bloom:     { strength: 0.1,  radius: 0.35, threshold: 0.92 },
-    vignette:  { darkness: 0.4,  offset: 1.0  },
-    ca:        { offset: 0.0006 },
-    exposure:  0.88,
+    bloom:    { strength: 0.1,  radius: 0.35, threshold: 0.92 },
+    vignette: { darkness: 0.4,  offset: 1.0  },
+    ca:       { offset: 0.0006 },
+    exposure: 0.88,
   },
   driving: {
-    bloom:     { strength: 0.12, radius: 0.4,  threshold: 0.9  },
-    vignette:  { darkness: 0.55, offset: 0.85 },
-    ca:        { offset: 0.0014 },
-    exposure:  1.05,
+    bloom:    { strength: 0.12, radius: 0.4,  threshold: 0.9  },
+    vignette: { darkness: 0.55, offset: 0.85 },
+    ca:       { offset: 0.0014 },
+    exposure: 1.05,
   },
   stargazing: {
-    bloom:     { strength: 0.9,  radius: 0.7,  threshold: 0.75 },
-    vignette:  { darkness: 0.75, offset: 0.75 },
-    ca:        { offset: 0.002  },
-    exposure:  0.75,
+    bloom:    { strength: 0.9,  radius: 0.7,  threshold: 0.75 },
+    vignette: { darkness: 0.75, offset: 0.75 },
+    ca:       { offset: 0.002  },
+    exposure: 0.75,
+  },
+  letter: {
+    bloom:    { strength: 0.14, radius: 0.4,  threshold: 0.90 },
+    vignette: { darkness: 0.50, offset: 0.88 },
+    ca:       { offset: 0.0008 },
+    exposure: 0.92,
+  },
+  elden: {
+    bloom:    { strength: 0.55, radius: 0.6,  threshold: 0.80 },
+    vignette: { darkness: 0.85, offset: 0.70 },
+    ca:       { offset: 0.003  },
+    exposure: 0.55,
+  },
+  tardis: {
+    bloom:    { strength: 0.35, radius: 0.55, threshold: 0.82 },
+    vignette: { darkness: 0.45, offset: 0.90 },
+    ca:       { offset: 0.001  },
+    exposure: 1.1,
   },
 };
 
@@ -58,11 +75,11 @@ export const PostProfiles = {
 // ─────────────────────────────────────────────────────────────
 const SkyGradientShader = {
   uniforms: {
-    topColor:    { value: new THREE.Color(0x8ec5e8) },
-    midColor:    { value: new THREE.Color(0xffd6a5) },
-    botColor:    { value: new THREE.Color(0xffecd2) },
-    midPoint:    { value: 0.45 },
-    exponent:    { value: 1.6  },
+    topColor: { value: new THREE.Color(0x8ec5e8) },
+    midColor: { value: new THREE.Color(0xffd6a5) },
+    botColor: { value: new THREE.Color(0xffecd2) },
+    midPoint: { value: 0.45 },
+    exponent: { value: 1.6  },
   },
   vertexShader: `
     varying vec3 vWorldPos;
@@ -87,11 +104,11 @@ const SkyGradientShader = {
 
 const VignetteCAShader = {
   uniforms: {
-    tDiffuse:  { value: null },
-    darkness:  { value: 0.5  },
-    offset:    { value: 0.95 },
-    caOffset:  { value: 0.001 },
-    resolution:{ value: new THREE.Vector2(1, 1) },
+    tDiffuse:   { value: null },
+    darkness:   { value: 0.5  },
+    offset:     { value: 0.95 },
+    caOffset:   { value: 0.001 },
+    resolution: { value: new THREE.Vector2(1, 1) },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -117,7 +134,6 @@ const VignetteCAShader = {
     }
   `,
 };
-
 
 function celShaderPatch(shader, steps = 3, rimPower = 2.2) {
   shader.fragmentShader = shader.fragmentShader.replace(
@@ -162,7 +178,6 @@ export class Renderer {
 
     this.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.gl.shadowMap.enabled = true;
-    // FIX: VSMShadowMap is incompatible with PointLights — use PCFSoftShadowMap instead
     this.gl.shadowMap.type    = THREE.PCFSoftShadowMap;
     this.gl.toneMapping       = THREE.ACESFilmicToneMapping;
     this.gl.toneMappingExposure = 0.9;
@@ -259,24 +274,22 @@ export class Renderer {
     });
   }
 
-  // FIX: wrapped in try/catch to prevent a single bad frame from killing the loop.
-  // Falls back to direct gl.render if the composer fails.
- render(scene, camera) {
-  if (this._activeComposer) {
-    try {
-      this._activeComposer.render();
-    } catch (e) {
-      console.warn('[Renderer] Composer render error:', e.message);
+  render(scene, camera) {
+    if (this._activeComposer) {
       try {
-        this.gl.render(scene, camera);  // ADD try/catch around fallback too
-      } catch (e2) {
-        console.error('[Renderer] Direct render also failed:', e2.message);
+        this._activeComposer.render();
+      } catch (e) {
+        console.warn('[Renderer] Composer render error:', e.message);
+        try {
+          this.gl.render(scene, camera);
+        } catch (e2) {
+          console.error('[Renderer] Direct render also failed:', e2.message);
+        }
       }
+    } else {
+      this.gl.render(scene, camera);
     }
-  } else {
-    this.gl.render(scene, camera);
   }
-}
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -321,24 +334,24 @@ export const Anime = {
   glass(color = 0x88ddff, opts = {}) {
     return new THREE.MeshPhysicalMaterial({
       color,
-      roughness:         opts.roughness    ?? 0.05,
-      metalness:         opts.metalness    ?? 0.1,
-      transmission:      opts.transmission ?? 0.9,
-      thickness:         opts.thickness    ?? 0.4,
-      ior:               opts.ior          ?? 1.45,
-      clearcoat:         opts.clearcoat    ?? 1.0,
-      clearcoatRoughness:opts.clearcoatRoughness ?? 0.05,
-      transparent:       true,
-      opacity:           opts.opacity      ?? 0.55,
-      side:              THREE.DoubleSide,
+      roughness:          opts.roughness          ?? 0.05,
+      metalness:          opts.metalness          ?? 0.1,
+      transmission:       opts.transmission       ?? 0.9,
+      thickness:          opts.thickness          ?? 0.4,
+      ior:                opts.ior                ?? 1.45,
+      clearcoat:          opts.clearcoat          ?? 1.0,
+      clearcoatRoughness: opts.clearcoatRoughness ?? 0.05,
+      transparent:        true,
+      opacity:            opts.opacity            ?? 0.55,
+      side:               THREE.DoubleSide,
     });
   },
 
   metal(color = 0xaaaacc, opts = {}) {
     return new THREE.MeshStandardMaterial({
       color,
-      roughness:       opts.roughness ?? 0.2,
-      metalness:       opts.metalness ?? 0.85,
+      roughness:       opts.roughness       ?? 0.2,
+      metalness:       opts.metalness       ?? 0.85,
       envMapIntensity: opts.envMapIntensity ?? 1.2,
       ...opts,
     });
@@ -355,15 +368,13 @@ export const Anime = {
       id.data[i+3] = 255;
     }
     ctx.putImageData(id, 0, 0);
-    const tex = (() => { const _t = new THREE.CanvasTexture(canvas); _t.channel = 0; return _t; })();
+    const tex = new THREE.CanvasTexture(canvas);
     tex.channel = 0;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.channel = 0;
     return tex;
   },
 
   outline(mesh, thickness = 0.04, color = 0x111111) {
-    // FIX: MeshBasicMaterial only accepts 'color' and standard props — removed any invalid 'ap' prop
     if (!mesh || !mesh.geometry) return null;
     const outMat  = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
     const outMesh = new THREE.Mesh(mesh.geometry, outMat);
@@ -411,13 +422,11 @@ export class Input {
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === document.getElementById('canvas');
     });
-    // ✅ ADD THIS: re-lock on canvas click when the overlay is closed
-  document.getElementById('canvas').addEventListener('click', () => {
-    if (!document.pointerLockElement && this._canRelock?.()) {
-      document.getElementById('canvas').requestPointerLock();
-    }
-  });
-
+    document.getElementById('canvas').addEventListener('click', () => {
+      if (!document.pointerLockElement && this._canRelock?.()) {
+        document.getElementById('canvas').requestPointerLock();
+      }
+    });
     let tx0 = 0, ty0 = 0;
     document.addEventListener('touchstart', e => {
       tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY;
@@ -442,23 +451,23 @@ export class Input {
 // ─────────────────────────────────────────────────────────────
 export class FPController {
   constructor(camera, input) {
-    this.camera      = camera;
-    this.input       = input;
-    this.speed       = 5;
-    this.sensitivity = 0.0045;
-    this.yaw         = 0;
-    this.pitch       = 0;
-    this.height      = 1.65;
-    this.pos         = new THREE.Vector3(0, this.height, 0);
-    this.vel         = new THREE.Vector3();
-    this.radius      = 0.35;
-    this.enabled     = true;
-    this._bobT       = 0;
-    this._bobAmp     = 0.052;
-    this._leanAmt    = 0;
-    this._breathT    = 0;
-    this._targetYaw  = 0;
-    this._targetPitch= 0;
+    this.camera       = camera;
+    this.input        = input;
+    this.speed        = 5;
+    this.sensitivity  = 0.0045;
+    this.yaw          = 0;
+    this.pitch        = 0;
+    this.height       = 1.65;
+    this.pos          = new THREE.Vector3(0, this.height, 0);
+    this.vel          = new THREE.Vector3();
+    this.radius       = 0.35;
+    this.enabled      = true;
+    this._bobT        = 0;
+    this._bobAmp      = 0.052;
+    this._leanAmt     = 0;
+    this._breathT     = 0;
+    this._targetYaw   = 0;
+    this._targetPitch = 0;
   }
 
   update(dt, collidables = []) {
@@ -532,62 +541,614 @@ export class Audio {
     document.addEventListener('click', resume);
     document.addEventListener('keydown', () => this._init(), { once: true });
   }
+
   _init() {
     if (this._ready) return;
     this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.master = this.ctx.createGain(); this.master.gain.value = 0.6;
-    this.master.connect(this.ctx.destination); this._ready = true;
+    this.master = this.ctx.createGain();
+    this.master.gain.value = 0.6;
+    this.master.connect(this.ctx.destination);
+    this._ready = true;
   }
+
+  // Play any named sfx or level music by key
+  play(name) {
+    if (!this._ready) return;
+    const fn = this.sfx[name];
+    if (fn) fn(this);
+  }
+
+  // Convenience wrappers — backward compat + per-level shorthands
+  music(bpm)           { this.sfx.music(this, bpm); }
+  musicStop()          { this.sfx.musicStop(this); }
+  musicElden(bpm)      { this.sfx.musicElden(this, bpm); }
+  musicGrocery(bpm)    { this.sfx.musicGrocery(this, bpm); }
+  musicCooking(bpm)    { this.sfx.musicCooking(this, bpm); }
+  musicPacking(bpm)    { this.sfx.musicPacking(this, bpm); }
+  musicDriving(bpm)    { this.sfx.musicDriving(this, bpm); }
+  musicStargazing(bpm) { this.sfx.musicStargazing(this, bpm); }
+  musicLetter(bpm)     { this.sfx.musicLetter(this, bpm); }
+  musicTardis(bpm)          { this.sfx.musicTardis(this, bpm); }
+  musicCharacterSelect(bpm) { this.sfx.musicCharacterSelect(this, bpm); }
+engineRev(rpm) { this.sfx.engineRev(this, rpm); }
+
+  // Stop current music then start the named level track.
+  playLevelMusic(levelName, bpm) {
+    this.sfx.musicStop(this);
+    setTimeout(() => {
+      const key = 'music' + levelName.charAt(0).toUpperCase() + levelName.slice(1);
+      const fn  = this.sfx[key];
+      if (fn) fn(this, bpm);
+      else    this.sfx.music(this, bpm);
+    }, 80);
+  }
+
   _osc(type, freq, gain, dur, dest) {
     if (!this._ready) return;
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(gain, this.ctx.currentTime);
     g.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + dur);
     g.connect(dest || this.master);
-    const o = this.ctx.createOscillator(); o.type = type; o.frequency.value = freq;
+    const o = this.ctx.createOscillator();
+    o.type = type; o.frequency.value = freq;
     o.connect(g); o.start(); o.stop(this.ctx.currentTime + dur);
   }
+
+  // ─────────────────────────────────────────────────────────
+  //  SFX + LEVEL MUSIC LIBRARY
+  // ─────────────────────────────────────────────────────────
   sfx = {
-    step:    (a) => { a._osc('sine', 120 + Math.random() * 40, 0.18, 0.08); },
-    pickup:  (a) => { [440,550,660].forEach((f,i) => setTimeout(() => a._osc('sine',f,0.25,0.12), i*60)); },
-    deny:    (a) => { a._osc('sawtooth', 80, 0.3, 0.2); },
-    cash:    (a) => { [880,1100,1320,1760].forEach((f,i) => setTimeout(() => a._osc('sine',f,0.2,0.15), i*80)); },
-    chop:    (a) => { a._osc('square',200,0.4,0.06); a._osc('sine',80,0.3,0.1); },
-    whoosh:  (a) => {
-      const buf = a.ctx.createBuffer(1, a.ctx.sampleRate*0.3, a.ctx.sampleRate);
-      const d = buf.getChannelData(0); for (let i=0; i<d.length; i++) d[i] = (Math.random()*2-1);
+
+    // ── FOOTSTEP
+    step: (a) => {
+      a._osc('sine', 80 + Math.random() * 20, 0.22, 0.06);
+      a._osc('triangle', 55, 0.12, 0.12);
+    },
+
+    // ── PICKUP — ethereal shimmer
+    pickup: (a) => {
+      [523, 659, 784, 1047].forEach((f, i) =>
+        setTimeout(() => {
+          a._osc('sine', f, 0.22, 0.18);
+          a._osc('sine', f * 1.5, 0.06, 0.3);
+        }, i * 55)
+      );
+    },
+
+    // ── DENY — menacing growl
+    deny: (a) => {
+      if (!a._ready) return;
+      const now = a.ctx.currentTime;
+      const o1 = a.ctx.createOscillator();
+      o1.type = 'sawtooth';
+      o1.frequency.setValueAtTime(60, now);
+      o1.frequency.exponentialRampToValueAtTime(30, now + 0.35);
+      const g1 = a.ctx.createGain();
+      g1.gain.setValueAtTime(0.35, now);
+      g1.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+      const wave = a.ctx.createOscillator();
+      wave.type = 'square'; wave.frequency.value = 45;
+      const g2 = a.ctx.createGain();
+      g2.gain.setValueAtTime(0.15, now);
+      g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+      const f = a.ctx.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = 280;
+      o1.connect(f); wave.connect(f); f.connect(g1); g1.connect(a.master);
+      g2.connect(a.master);
+      o1.start(); o1.stop(now + 0.35);
+      wave.start(); wave.stop(now + 0.25);
+    },
+
+    // ── CASH — triumphant rune chime
+    cash: (a) => {
+      if (!a._ready) return;
+      [523, 659, 784, 1047, 1319].forEach((f, i) => {
+        setTimeout(() => {
+          a._osc('sine', f, 0.28, 0.25);
+          a._osc('sine', f * 2, 0.08, 0.2);
+        }, i * 70);
+      });
+      setTimeout(() => a._osc('sine', 130, 0.35, 0.6), 0);
+    },
+
+    // ── CHOP — metallic sword impact
+    chop: (a) => {
+      if (!a._ready) return;
+      const now = a.ctx.currentTime;
+      a._osc('square', 320, 0.35, 0.04);
+      a._osc('square', 480, 0.2,  0.03);
+      a._osc('sine',    65, 0.4,  0.12);
+      const buf = a.ctx.createBuffer(1, a.ctx.sampleRate * 0.08, a.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.6;
       const src = a.ctx.createBufferSource(); src.buffer = buf;
       const g = a.ctx.createGain();
-      g.gain.setValueAtTime(0.0001, a.ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.3, a.ctx.currentTime+0.05);
-      g.gain.exponentialRampToValueAtTime(0.0001, a.ctx.currentTime+0.3);
-      const f = a.ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=1000;
-      src.connect(f); f.connect(g); g.connect(a.master); src.start(); src.stop(a.ctx.currentTime+0.3);
+      g.gain.setValueAtTime(0.25, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+      const filt = a.ctx.createBiquadFilter();
+      filt.type = 'highpass'; filt.frequency.value = 3000;
+      src.connect(filt); filt.connect(g); g.connect(a.master);
+      src.start(); src.stop(now + 0.08);
     },
-    sizzle: (a) => {
-      const buf = a.ctx.createBuffer(1, a.ctx.sampleRate*0.4, a.ctx.sampleRate);
-      const d = buf.getChannelData(0); for (let i=0; i<d.length; i++) d[i] = (Math.random()*2-1)*0.5;
+
+    // ── WHOOSH — directional swoosh
+    whoosh: (a) => {
+      if (!a._ready) return;
+      const now = a.ctx.currentTime;
+      const buf = a.ctx.createBuffer(1, a.ctx.sampleRate * 0.45, a.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1);
       const src = a.ctx.createBufferSource(); src.buffer = buf;
-      const g = a.ctx.createGain(); g.gain.setValueAtTime(0.5, a.ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.0001, a.ctx.currentTime+0.4);
-      const f = a.ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=2000;
-      src.connect(f); f.connect(g); g.connect(a.master); src.start(); src.stop(a.ctx.currentTime+0.4);
+      const g = a.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.45, now + 0.04);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+      const f = a.ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.setValueAtTime(2200, now);
+      f.frequency.exponentialRampToValueAtTime(400, now + 0.45);
+      f.Q.value = 1.8;
+      src.connect(f); f.connect(g); g.connect(a.master);
+      src.start(); src.stop(now + 0.45);
     },
-    music: (a, bpm = 120) => {
+
+    // ── SIZZLE — fire effect
+    sizzle: (a) => {
+      const buf = a.ctx.createBuffer(1, a.ctx.sampleRate * 0.4, a.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.5;
+      const src = a.ctx.createBufferSource(); src.buffer = buf;
+      const g = a.ctx.createGain();
+      g.gain.setValueAtTime(0.5, a.ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, a.ctx.currentTime + 0.4);
+      const f = a.ctx.createBiquadFilter();
+      f.type = 'bandpass'; f.frequency.value = 2000;
+      src.connect(f); f.connect(g); g.connect(a.master);
+      src.start(); src.stop(a.ctx.currentTime + 0.4);
+    },
+
+    // ════════════════════════════════════════════════════════
+    //  LEVEL MUSIC
+    //  Call via: engine.audio.playLevelMusic('grocery')
+    //  or directly: engine.audio.play('musicGrocery')
+    // ════════════════════════════════════════════════════════
+
+    // ── DEFAULT FALLBACK
+    music: (a, bpm = 110) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      const notes = [261.63, 329.63, 392, 493.88, 523.25];
-      const step = 60/bpm/2;
+      const notes = [261.63, 293.66, 329.63, 392, 440];
+      const step = 60 / bpm / 2;
       const schedule = () => {
         if (a._musicStop) { a._musicPlaying = false; return; }
-        const f = notes[Math.floor(Math.random()*notes.length)] * (Math.random() > 0.5 ? 2 : 1);
-        a._osc('sine', f, 0.07, step*1.8);
-        a._musicTimer = setTimeout(schedule, step*1000*0.95);
+        const f = notes[Math.floor(Math.random() * notes.length)] * (Math.random() > 0.5 ? 2 : 1);
+        a._osc('sine', f, 0.07, step * 1.8);
+        if (Math.random() > 0.6)  a._osc('sine', f * 3,   0.025, step * 1.2);
+        if (Math.random() > 0.75) a._osc('triangle', f * 0.5, 0.05,  step * 2.5);
+        a._musicTimer = setTimeout(schedule, step * 1000 * 0.88);
       };
       schedule();
     },
-    musicStop: (a) => { a._musicStop = true; clearTimeout(a._musicTimer); },
-    engine:    (a) => {
+
+    // ── 🎭 CHARACTER SELECT — warm, inviting, magical anticipation
+    // Gentle ascending arpeggios in C major — sparkly and welcoming,
+    // the feeling of choosing your adventure before it begins.
+    musicCharacterSelect: (a, bpm = 88) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      const arp  = [261.63, 329.63, 392, 523.25, 659.25, 784]; // C major arpeggio
+      const step = 60 / bpm / 2;
+      let arpIdx = 0;
+      const schedule = () => {
+        if (a._musicStop) { a._musicPlaying = false; return; }
+        const octave = Math.floor(arpIdx / arp.length) % 2 === 0 ? 1 : 0.5;
+        const f = arp[arpIdx % arp.length] * octave;
+        a._osc('sine', f, 0.10, step * 1.6);
+        if (Math.random() > 0.6)  a._osc('sine', f * 2,    0.04, step * 1.4);
+        if (arpIdx % 4 === 0)     a._osc('triangle', f * 0.25, 0.08, step * 3.0);
+        if (Math.random() > 0.72) a._osc('sine', f * 3, 0.03, step * 1.2);
+        arpIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.8 + Math.random() * 0.25));
+      };
+      schedule();
+    },
+
+    // ── 🛒 GROCERY — bright, jingly, playful whimsy
+    // Crisp bell tones in a major scale, quick tempo, occasional
+    // chime flourishes — like a charming market on a sunny morning.
+    musicGrocery: (a, bpm = 126) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // C major scale — cheerful and open
+      const melody = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.50];
+      const bass   = [130.81, 164.81, 196.00, 261.63];
+      const step   = 60 / bpm / 2;
+      const schedule = () => {
+        if (a._musicStop) { a._musicPlaying = false; return; }
+        // bright bell melody
+        const f = melody[Math.floor(Math.random() * melody.length)];
+        a._osc('sine', f, 0.13, step * 1.4);
+        // second voice harmony — third above
+        if (Math.random() > 0.5) a._osc('sine', f * 1.26, 0.07, step * 1.2);
+        // sparkly overtone
+        if (Math.random() > 0.6) a._osc('sine', f * 2, 0.05, step * 0.9);
+        // chime run — fast ascending flicker
+        if (Math.random() > 0.82) {
+          [0, 60, 120, 180].forEach((ms, i) =>
+            setTimeout(() => a._osc('sine', melody[i] * 2, 0.09, 0.12), ms)
+          );
+        }
+        // warm bass pluck on the beat
+        if (Math.random() > 0.55) a._osc('triangle', bass[Math.floor(Math.random() * bass.length)], 0.1, step * 1.8);
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.6 + Math.random() * 0.3));
+      };
+      schedule();
+    },
+
+    // ── 🍳 COOKING — warm, cozy, kitchen-magic
+    // Mellow triangle tones and soft bell hits in a pentatonic
+    // scale — the sound of something wonderful simmering gently.
+    musicCooking: (a, bpm = 96) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // D pentatonic major — warm and homey
+      const notes = [293.66, 329.63, 369.99, 440, 493.88, 587.33];
+      const step  = 60 / bpm / 2;
+      // persistent gentle simmer drone
+      const drone = a.ctx.createOscillator();
+      drone.type = 'sine'; drone.frequency.value = 73.42; // D2
+      const dg = a.ctx.createGain(); dg.gain.value = 0.04;
+      drone.connect(dg); dg.connect(a.master); drone.start();
+      a._cookDrone = drone;
+      const schedule = () => {
+        if (a._musicStop) {
+          a._musicPlaying = false;
+          try { drone.stop(); } catch(_) {}
+          a._cookDrone = null;
+          return;
+        }
+        const f = notes[Math.floor(Math.random() * notes.length)];
+        // warm triangle melody
+        a._osc('triangle', f, 0.14, step * 2.4);
+        // soft harmonic halo
+        if (Math.random() > 0.55) a._osc('sine', f * 1.5, 0.06, step * 2.0);
+        // occasional gentle bell ping
+        if (Math.random() > 0.7) {
+          setTimeout(() => {
+            a._osc('sine', f * 2, 0.1, 0.22);
+            a._osc('sine', f * 4, 0.04, 0.18);
+          }, step * 400);
+        }
+        // deep warm bass note
+        if (Math.random() > 0.68) a._osc('sine', f * 0.25, 0.09, step * 3.2);
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.85 + Math.random() * 0.4));
+      };
+      schedule();
+    },
+
+    // ── 🧺 PACKING — dreamy, bittersweet, tender romance
+    // Slow minor-tinged melody with long sustains and a warm
+    // lower voice — wistful and hopeful at the same time.
+    musicPacking: (a, bpm = 72) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // A natural minor — longing and tender
+      const melody = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392];
+      const step   = 60 / bpm / 2;
+      const schedule = () => {
+        if (a._musicStop) { a._musicPlaying = false; return; }
+        const f = melody[Math.floor(Math.random() * melody.length)];
+        // slow, breathing sine melody
+        a._osc('sine', f, 0.12, step * 3.2);
+        // lower shadow voice — romantic depth
+        if (Math.random() > 0.45) a._osc('sine', f * 0.5, 0.08, step * 4.0);
+        // high ethereal overtone
+        if (Math.random() > 0.6) a._osc('sine', f * 2, 0.05, step * 2.8);
+        // occasional tender chord swell
+        if (Math.random() > 0.75) {
+          a._osc('sine', f * 1.189, 0.07, step * 3.0); // minor third
+          a._osc('sine', f * 1.498, 0.05, step * 3.0); // perfect fifth
+        }
+        a._musicTimer = setTimeout(schedule, step * 1000 * (1.0 + Math.random() * 0.6));
+      };
+      schedule();
+    },
+
+    // ── 🚗 DRIVING — adventurous, romantic, open road
+    // A rolling, forward-moving melody in G major with a hopeful
+    // bass pulse — windows down, going somewhere wonderful together.
+    musicDriving: (a, bpm = 112) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // G major — bright and adventurous
+      const melody = [392, 440, 493.88, 523.25, 587.33, 659.25, 783.99];
+      const bass   = [98, 130.81, 146.83, 196];
+      const step   = 60 / bpm / 2;
+      // steady low pulse — the open road
+      const beatInterval = setInterval(() => {
+        if (a._musicStop) { clearInterval(beatInterval); return; }
+        a._osc('sine', 98, 0.08, 0.12);
+      }, (60 / bpm) * 1000);
+      a._driveBeat = beatInterval;
+      const schedule = () => {
+        if (a._musicStop) {
+          a._musicPlaying = false;
+          clearInterval(beatInterval);
+          a._driveBeat = null;
+          return;
+        }
+        const f = melody[Math.floor(Math.random() * melody.length)];
+        a._osc('sine', f, 0.11, step * 1.6);
+        // bright second voice
+        if (Math.random() > 0.5) a._osc('sine', f * 1.26, 0.07, step * 1.4);
+        // mystical shimmer
+        if (Math.random() > 0.65) a._osc('sine', f * 3, 0.03, step * 1.2);
+        // bass anchor
+        if (Math.random() > 0.6) a._osc('triangle', bass[Math.floor(Math.random() * bass.length)], 0.09, step * 2.0);
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.75 + Math.random() * 0.35));
+      };
+      schedule();
+    },
+
+    // ── 🌟 STARGAZING — ethereal, celestial, timeless romance
+    // Slow, widely-spaced tones in an ethereal major scale —
+    // the sound of lying on a blanket watching the sky breathe.
+    musicStargazing: (a, bpm = 52) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // E major add9 — open, celestial, infinite
+      const notes = [164.81, 185, 220, 246.94, 277.18, 329.63, 369.99, 493.88];
+      const step  = 60 / bpm / 2;
+      // quiet stellar breath drone
+      const drone = a.ctx.createOscillator();
+      drone.type = 'sine'; drone.frequency.value = 41.2; // E1
+      const dg = a.ctx.createGain(); dg.gain.value = 0.035;
+      // slow LFO shimmer on drone
+      const lfo = a.ctx.createOscillator(); lfo.frequency.value = 0.07;
+      const lg  = a.ctx.createGain(); lg.gain.value = 0.012;
+      lfo.connect(lg); lg.connect(dg.gain);
+      drone.connect(dg); dg.connect(a.master); drone.start(); lfo.start();
+      a._starDrone = drone; a._starLfo = lfo;
+      const schedule = () => {
+        if (a._musicStop) {
+          a._musicPlaying = false;
+          try { drone.stop(); } catch(_) {}
+          try { lfo.stop();   } catch(_) {}
+          a._starDrone = a._starLfo = null;
+          return;
+        }
+        const f = notes[Math.floor(Math.random() * notes.length)];
+        // floating long tone
+        a._osc('sine', f, 0.09, step * 4.5);
+        // celestial octave
+        a._osc('sine', f * 2, 0.06, step * 5.0);
+        // high shimmer star
+        if (Math.random() > 0.55) a._osc('sine', f * 4, 0.04, step * 3.5);
+        // deep anchor
+        if (Math.random() > 0.7)  a._osc('sine', f * 0.5, 0.05, step * 6.0);
+        // rare magical chord bloom
+        if (Math.random() > 0.8) {
+          a._osc('sine', f * 1.26, 0.06, step * 4.5);
+          a._osc('sine', f * 1.498, 0.04, step * 4.5);
+        }
+        a._musicTimer = setTimeout(schedule, step * 1000 * (1.2 + Math.random() * 1.0));
+      };
+      schedule();
+    },
+
+    // ── ✉️ LETTER — intimate, romantic, heartfelt
+    // Delicate, close-together tones — like words written slowly
+    // by candlelight, each note chosen with care and tenderness.
+    musicLetter: (a, bpm = 84) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // F major — warm and personal
+      const melody = [174.61, 196, 220, 261.63, 293.66, 349.23, 392, 440];
+      const step   = 60 / bpm / 2;
+      const schedule = () => {
+        if (a._musicStop) { a._musicPlaying = false; return; }
+        const f = melody[Math.floor(Math.random() * melody.length)];
+        // delicate sine
+        a._osc('sine', f, 0.10, step * 2.6);
+        // tender inner voice
+        if (Math.random() > 0.5) a._osc('sine', f * 1.335, 0.07, step * 2.2); // perfect fourth
+        // warm bass breath
+        if (Math.random() > 0.65) a._osc('sine', f * 0.5, 0.08, step * 3.5);
+        // high shimmer grace note
+        if (Math.random() > 0.7) {
+          setTimeout(() => a._osc('sine', f * 3, 0.05, 0.18), step * 300);
+        }
+        // occasional romantic chord
+        if (Math.random() > 0.78) {
+          a._osc('sine', f * 1.189, 0.06, step * 2.5); // minor third warmth
+        }
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.9 + Math.random() * 0.5));
+      };
+      schedule();
+    },
+
+    // ── ⚜️ ELDEN — EXTREMELY SCARY
+    // Subsonic dread, dissonant Phrygian melody, choir beating
+    // clusters, chaotic unpredictable rhythm, sudden piercing
+    // stings, and deep impact thuds. Psychological horror.
+    musicElden: (a, bpm = 38) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+
+      // ── SUBSONIC FLOOR (felt, not quite heard)
+      const drone1 = a.ctx.createOscillator();
+      drone1.type = 'sine'; drone1.frequency.value = 18;
+      const dg1 = a.ctx.createGain(); dg1.gain.value = 0.28;
+      drone1.connect(dg1); dg1.connect(a.master); drone1.start();
+
+      // ── GROWLING MID DRONE with chaotic wobble
+      const drone2 = a.ctx.createOscillator();
+      drone2.type = 'sawtooth'; drone2.frequency.value = 42;
+      const df2 = a.ctx.createBiquadFilter();
+      df2.type = 'highpass'; df2.frequency.value = 55;
+      const dg2 = a.ctx.createGain(); dg2.gain.value = 0.16;
+      const lfo1 = a.ctx.createOscillator(); lfo1.frequency.value = 0.41;
+      const lg1  = a.ctx.createGain(); lg1.gain.value = 28;
+      lfo1.connect(lg1); lg1.connect(drone2.frequency);
+      drone2.connect(df2); df2.connect(dg2); dg2.connect(a.master);
+      drone2.start(); lfo1.start();
+
+      // ── DISSONANT TRITONE CHOIR (beating, sickening)
+      const choirFreqs = [110, 116.54, 123.47, 130.81]; // Am cluster, minor 2nds
+      const choir = choirFreqs.map(f => {
+        const o = a.ctx.createOscillator();
+        o.type = 'triangle'; o.frequency.value = f;
+        const g = a.ctx.createGain(); g.gain.value = 0.028;
+        const filt = a.ctx.createBiquadFilter();
+        filt.type = 'bandpass'; filt.frequency.value = f * 2.5; filt.Q.value = 12;
+        o.connect(filt); filt.connect(g); g.connect(a.master); o.start();
+        return { osc: o, gain: g };
+      });
+
+      // ── HARSH HIGH SHIMMER (constant unease)
+      const shimmer = a.ctx.createOscillator();
+      shimmer.type = 'square'; shimmer.frequency.value = 880;
+      const sg = a.ctx.createGain(); sg.gain.value = 0.008;
+      const sf = a.ctx.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 1800; sf.Q.value = 6;
+      shimmer.connect(sf); sf.connect(sg); sg.connect(a.master); shimmer.start();
+
+      a._eldenDrone  = drone1;
+      a._eldenDrone2 = drone2;
+      a._eldenLfo    = lfo1;
+      a._eldenChoir  = choir;
+      a._eldenShimmer = shimmer;
+
+      // ── MELODIC SCHEDULE — Phrygian dominant, slow, chaotic
+      const notes = [41.2, 43.65, 46.25, 49, 55, 58.27, 65.41, 69.30];
+      const step  = 60 / bpm / 2;
+
+      const stopAll = () => {
+        a._musicPlaying = false;
+        try { drone1.stop();   } catch(_) {}
+        try { drone2.stop();   } catch(_) {}
+        try { lfo1.stop();     } catch(_) {}
+        try { shimmer.stop();  } catch(_) {}
+        choir.forEach(c => { try { c.osc.stop(); } catch(_) {} });
+        a._eldenDrone = a._eldenDrone2 = a._eldenLfo = a._eldenChoir = a._eldenShimmer = null;
+      };
+
+      const schedule = () => {
+        if (a._musicStop) { stopAll(); return; }
+
+        // ── LONG UNPREDICTABLE SILENCE (30% chance — anticipation is terror)
+        if (Math.random() > 0.70) {
+          a._musicTimer = setTimeout(schedule, step * 1000 * (2.0 + Math.random() * 3.5));
+          return;
+        }
+
+        const f = notes[Math.floor(Math.random() * notes.length)];
+
+        // hollow, distorted low melody
+        a._osc('sawtooth', f, 0.16, step * 3.8);
+        // tritone shadow — the most unsettling interval
+        if (Math.random() > 0.4) a._osc('square', f * 1.414, 0.12, step * 2.8);
+        // minor second grind
+        if (Math.random() > 0.55) {
+          setTimeout(() => a._osc('sawtooth', f * 1.059, 0.09, step * 3), step * 250);
+        }
+
+        // ── SUDDEN PIERCING SCREAM STING (rare but devastating)
+        if (Math.random() > 0.84) {
+          setTimeout(() => {
+            if (a._musicStop) return;
+            a._osc('square',   880, 0.30, 0.5);
+            a._osc('square',   932, 0.26, 0.45);
+            a._osc('sawtooth', 1174, 0.22, 0.4);
+            a._osc('sine',      28, 0.50, 0.6); // deep impact thud
+          }, Math.random() * step * 600);
+        }
+
+        // ── CHAOTIC DISSONANT CHORD CLUSTER
+        if (Math.random() > 0.76) {
+          a._osc('sawtooth', f,        0.14, 0.55);
+          a._osc('sawtooth', f * 1.18, 0.12, 0.55);
+          a._osc('sawtooth', f * 1.41, 0.10, 0.55);
+          a._osc('square',   f * 1.78, 0.08, 0.45);
+        }
+
+        // ── DEEP HORROR THUD
+        if (Math.random() > 0.80) {
+          a._osc('sine', 22, 0.40, 0.7);
+          a._osc('sine', 28, 0.28, 0.55);
+        }
+
+        // ── EPILEPTIC RHYTHM — chaos guarantees dread
+        const variance = 0.35 + Math.random() * 2.8;
+        a._musicTimer = setTimeout(schedule, step * 1000 * variance);
+      };
+
+      schedule();
+    },
+
+    // ── ✨ TARDIS / THE END — triumphant, transcendent, magical
+    // Ascending major chords, bright harmonics, a sense of
+    // arrival — you made it, and it was worth every step.
+    musicTardis: (a, bpm = 98) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      // C major — pure, triumphant, complete
+      const melody = [392, 440, 493.88, 523.25, 587.33, 659.25, 783.99, 1046.50];
+      const bass   = [65.41, 98, 130.81, 196];
+      const step   = 60 / bpm / 2;
+      // warm tonic drone
+      const drone = a.ctx.createOscillator();
+      drone.type = 'sine'; drone.frequency.value = 65.41; // C2
+      const dg = a.ctx.createGain(); dg.gain.value = 0.045;
+      drone.connect(dg); dg.connect(a.master); drone.start();
+      a._tardisDrone = drone;
+      const schedule = () => {
+        if (a._musicStop) {
+          a._musicPlaying = false;
+          try { drone.stop(); } catch(_) {}
+          a._tardisDrone = null;
+          return;
+        }
+        const f = melody[Math.floor(Math.random() * melody.length)];
+        // bright triumphant melody
+        a._osc('sine', f, 0.14, step * 1.8);
+        // full harmonic — third + fifth = major chord
+        if (Math.random() > 0.45) a._osc('sine', f * 1.26,  0.09, step * 1.6);
+        if (Math.random() > 0.55) a._osc('sine', f * 1.498, 0.07, step * 1.6);
+        // magical high shimmer
+        if (Math.random() > 0.6) a._osc('sine', f * 2, 0.07, step * 1.4);
+        if (Math.random() > 0.7) a._osc('sine', f * 3, 0.04, step * 1.2);
+        // heroic bass anchor
+        if (Math.random() > 0.55) a._osc('triangle', bass[Math.floor(Math.random() * bass.length)], 0.1, step * 2.2);
+        // triumphant fanfare flourish
+        if (Math.random() > 0.85) {
+          [0, 70, 140, 210, 280].forEach((ms, i) =>
+            setTimeout(() => a._osc('sine', melody[i % melody.length], 0.12, 0.18), ms)
+          );
+        }
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.65 + Math.random() * 0.35));
+      };
+      schedule();
+    },
+
+    // ── MUSIC STOP — kills ALL level music immediately
+    musicStop: (a) => {
+      a._musicStop    = true;
+      a._musicPlaying = false;          // ← critical: lets the next level start
+      clearTimeout(a._musicTimer);
+      clearInterval(a._driveBeat);
+      a._driveBeat = null;
+      // Kill any persistent oscillators left by level tracks
+      const oscs = ['_cookDrone','_starDrone','_starLfo','_tardisDrone',
+                     '_eldenDrone','_eldenDrone2','_eldenLfo','_eldenShimmer'];
+      oscs.forEach(k => { if (a[k]) { try { a[k].stop(); } catch(_) {} a[k] = null; } });
+      if (a._eldenChoir) {
+        a._eldenChoir.forEach(c => { try { c.osc.stop(); } catch(_) {} });
+        a._eldenChoir = null;
+      }
+    },
+
+    // ── ENGINE (driving level only)
+    engine: (a) => {
       if (!a._ready || a._engineOsc) return;
       const o = a.ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 55;
       const g = a.ctx.createGain(); g.gain.value = 0.08;
@@ -597,13 +1158,18 @@ export class Audio {
     },
     engineRev: (a, rpm) => {
       if (!a._engineOsc) return;
-      a._engineOsc.frequency.setTargetAtTime(40 + rpm*80, a.ctx.currentTime, 0.1);
-      a._engineGain.gain.setTargetAtTime(0.05 + rpm*0.1, a.ctx.currentTime, 0.05);
+      a._engineOsc.frequency.setTargetAtTime(40 + rpm * 80, a.ctx.currentTime, 0.1);
+      a._engineGain.gain.setTargetAtTime(0.05 + rpm * 0.1, a.ctx.currentTime, 0.05);
     },
-    engineStop: (a) => { if (!a._engineOsc) return; a._engineOsc.stop(); a._engineOsc = null; },
-    horn: (a) => { a._osc('sawtooth',392,0.4,0.3); a._osc('sawtooth',494,0.3,0.3); },
+    engineStop: (a) => {
+      if (!a._engineOsc) return;
+      a._engineOsc.stop(); a._engineOsc = null;
+    },
+    horn: (a) => {
+      a._osc('sawtooth', 392, 0.4, 0.3);
+      a._osc('sawtooth', 494, 0.3, 0.3);
+    },
   };
-  play(name, ...args) { if (this.sfx[name]) this.sfx[name](this, ...args); }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -614,8 +1180,8 @@ export const Build = {
   floor(scene, color = 0xd4c8f0, w = 80, h = 80) {
     const mat = new THREE.MeshStandardMaterial({
       color,
-      roughness:   0.75,
-      metalness:   0.02,
+      roughness:    0.75,
+      metalness:    0.02,
       roughnessMap: Anime.roughnessTex(42, 128),
     });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h, 1, 1), mat);
@@ -626,7 +1192,7 @@ export const Build = {
   },
 
   box(scene, x, y, z, w, h, d, color = 0xffffff, opts = {}) {
-    const mat = Anime.mat(color, { roughness: 0.7, metalness: 0.05, ...(opts.matOpts || {}) });
+    const mat  = Anime.mat(color, { roughness: 0.7, metalness: 0.05, ...(opts.matOpts || {}) });
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     mesh.position.set(x, y + h / 2, z);
     mesh.castShadow = true; mesh.receiveShadow = true;
@@ -675,7 +1241,8 @@ export const Build = {
     const wGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.25, 20);
     const wMat = Anime.mat(0x222233, { roughness: 0.85, metalness: 0.4 });
     [[-1.1,0.35,1.4],[1.1,0.35,1.4],[-1.1,0.35,-1.4],[1.1,0.35,-1.4]].forEach(([wx,wy,wz]) => {
-      const w = new THREE.Mesh(wGeo, wMat); w.rotation.z = Math.PI/2;
+      const w = new THREE.Mesh(wGeo, wMat);
+      w.rotation.z = Math.PI / 2;
       w.position.set(wx, wy, wz); g.add(w);
     });
     return g;
@@ -683,8 +1250,8 @@ export const Build = {
 
   stars(scene, count = 600) {
     const layers = [
-      { count: Math.floor(count * 0.7), size: 0.22, color: 0xffffff,  opacity: 0.9 },
-      { count: Math.floor(count * 0.3), size: 0.55, color: 0xfff0cc,  opacity: 0.6 },
+      { count: Math.floor(count * 0.7), size: 0.22, color: 0xffffff, opacity: 0.9 },
+      { count: Math.floor(count * 0.3), size: 0.55, color: 0xfff0cc, opacity: 0.6 },
     ];
     const pts = [];
     for (const layer of layers) {
@@ -700,15 +1267,14 @@ export const Build = {
       }
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
       const mat = new THREE.PointsMaterial({
-        color:          layer.color,
-        size:           layer.size,
-        sizeAttenuation:true,
-        transparent:    true,
-        opacity:        layer.opacity,
+        color:           layer.color,
+        size:            layer.size,
+        sizeAttenuation: true,
+        transparent:     true,
+        opacity:         layer.opacity,
       });
       const p = new THREE.Points(geo, mat);
-      scene.add(p);
-      pts.push(p);
+      scene.add(p); pts.push(p);
     }
     return pts;
   },
@@ -742,10 +1308,11 @@ export const Build = {
       grad.addColorStop(0, 'rgba(255,255,230,1)');
       grad.addColorStop(1, 'rgba(255,200,80,0)');
       fctx.fillStyle = grad; fctx.fillRect(0,0,64,64);
-      const flareTex = (() => { const _t = new THREE.CanvasTexture(fc); _t.channel = 0; return _t; })();
+      const flareTex = new THREE.CanvasTexture(fc);
+      flareTex.channel = 0;
       lensflare.addElement(new LensflareElement(flareTex, 180, 0));
-      lensflare.addElement(new LensflareElement(flareTex, 60, 0.4));
-      lensflare.addElement(new LensflareElement(flareTex, 25, 0.8));
+      lensflare.addElement(new LensflareElement(flareTex, 60,  0.4));
+      lensflare.addElement(new LensflareElement(flareTex, 25,  0.8));
       sun.add(lensflare);
     }
 
@@ -755,8 +1322,6 @@ export const Build = {
   pointLight(scene, x, y, z, color = 0xffcc66, intensity = 1.5, distance = 8) {
     const light = new THREE.PointLight(color, intensity, distance, 2);
     light.position.set(x, y, z);
-    // FIX: PointLights with castShadow=true require PCFShadowMap or BasicShadowMap,
-    // not VSM. Shadow casting disabled on point lights to avoid conflicts.
     light.castShadow = false;
     scene.add(light);
     return light;
@@ -775,9 +1340,11 @@ export const Build = {
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(text, 140, 36);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.channel = 0;
     const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(1.5, 0.38),
-      new THREE.MeshBasicMaterial({ map: (() => { const _t = new THREE.CanvasTexture(canvas); _t.channel = 0; return _t; })(), transparent: true, depthWrite: false }),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }),
     );
     mesh.position.set(x, y, z); scene.add(mesh);
     mesh.userData.isBillboard = true;
@@ -796,9 +1363,9 @@ export const Build = {
     light.position.set(x, y, z); scene.add(light);
 
     if (label) Build.label(scene, label, x, y + 0.5, z);
-    mesh.userData.isItem  = true;
-    mesh.userData.label   = label;
-    mesh.userData.light   = light;
+    mesh.userData.isItem       = true;
+    mesh.userData.label        = label;
+    mesh.userData.light        = light;
     mesh.userData.baseEmissive = 0.5;
     mesh.userData.baseLight    = 1.2;
     return mesh;
@@ -809,9 +1376,9 @@ export const Build = {
     const road = new THREE.Mesh(
       new THREE.PlaneGeometry(width, len),
       new THREE.MeshStandardMaterial({
-        color:    0x2e2e3a,
-        roughness:0.98,
-        metalness:0.0,
+        color:       0x2e2e3a,
+        roughness:   0.98,
+        metalness:   0.0,
         roughnessMap: Anime.roughnessTex(7, 64),
       }),
     );
@@ -826,10 +1393,11 @@ export const Build = {
           new THREE.PlaneGeometry(0.14, 2.8),
           new THREE.MeshBasicMaterial({ color: 0xffff88 }),
         );
-        dash.rotation.x = -Math.PI / 2; dash.position.set(lx, 0.02, dz); scene.add(dash);
+        dash.rotation.x = -Math.PI / 2;
+        dash.position.set(lx, 0.02, dz);
+        scene.add(dash);
       }
     }
-
     [-1, 1].forEach(side => {
       const kerb = new THREE.Mesh(
         new THREE.PlaneGeometry(0.18, len),
@@ -843,9 +1411,9 @@ export const Build = {
   },
 
   particles(scene, count = 80, area = 20, color = 0xffff99, size = 0.12) {
-    const geo  = new THREE.BufferGeometry();
-    const pos  = new Float32Array(count * 3);
-    const vel  = new Float32Array(count * 3);
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    const vel = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       pos[i*3]   = (Math.random() - 0.5) * area;
       pos[i*3+1] = Math.random() * 4 + 0.5;
@@ -856,11 +1424,7 @@ export const Build = {
     }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const mat = new THREE.PointsMaterial({
-      color,
-      size,
-      sizeAttenuation: true,
-      transparent: true,
-      opacity: 0.85,
+      color, size, sizeAttenuation: true, transparent: true, opacity: 0.85,
     });
     const pts = new THREE.Points(geo, mat);
     pts.userData.vel  = vel;
@@ -869,15 +1433,6 @@ export const Build = {
     return pts;
   },
 
-  /**
-   * animeSky(scene, preset)
-   * Presets: 'day' | 'golden' | 'night' | 'dusk' | 'overcast'
-   * Returns { dome, clouds, update(dt, camera) }
-   *
-   * FIX: update() now accepts a camera argument instead of reading
-   * scene.children[0] — which was causing the projectObject crash
-   * because scene.children[0] could be a disposed or invalid object.
-   */
   animeSky(scene, preset = 'day') {
     const PRESETS = {
       day:      { top:0x5ab3e8, mid:0xa8d8f0, bot:0xe8f4fb, fog:0xc8e8f5, fogNear:30, fogFar:90,  cloudColor:0xffffff, cloudOpacity:0.82 },
@@ -889,7 +1444,6 @@ export const Build = {
 
     const p = PRESETS[preset] ?? PRESETS.day;
 
-    // Sky dome — large inward-facing sphere with gradient shader
     const domeMat = new THREE.ShaderMaterial({
       uniforms: {
         topColor: { value: new THREE.Color(p.top) },
@@ -907,10 +1461,8 @@ export const Build = {
     dome.renderOrder = -1;
     scene.add(dome);
 
-    // Fog to blend into horizon
     scene.fog = new THREE.Fog(p.fog, p.fogNear, p.fogFar);
 
-    // Cloud layer — 3 planes at different heights & speeds using canvas textures
     const clouds = [];
     const cloudHeights = [28, 34, 40];
     const cloudSpeeds  = [0.9, 0.5, 0.25];
@@ -921,41 +1473,33 @@ export const Build = {
       const cv   = document.createElement('canvas');
       cv.width = cv.height = size;
       const ctx  = cv.getContext('2d');
-
-      // Paint soft procedural cloud blobs
       ctx.clearRect(0, 0, size, size);
       const numBlobs = 6 + i * 2;
       for (let b = 0; b < numBlobs; b++) {
-        const bx  = Math.random() * size;
-        const by  = Math.random() * size;
-        const rx  = 60 + Math.random() * 120;
-        const ry  = 30 + Math.random() * 55;
+        const bx = Math.random() * size;
+        const by = Math.random() * size;
+        const rx = 60 + Math.random() * 120;
+        const ry = 30 + Math.random() * 55;
         const grad = ctx.createRadialGradient(bx, by, 0, bx, by, rx);
         grad.addColorStop(0,   `rgba(255,255,255,${0.55 + Math.random() * 0.35})`);
         grad.addColorStop(0.5, `rgba(255,255,255,${0.15 + Math.random() * 0.2})`);
         grad.addColorStop(1,   'rgba(255,255,255,0)');
         ctx.fillStyle = grad;
         ctx.save();
-        ctx.translate(bx, by);
-        ctx.scale(1, ry / rx);
-        ctx.translate(-bx, -by);
-        ctx.beginPath();
-        ctx.arc(bx, by, rx, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.translate(bx, by); ctx.scale(1, ry / rx); ctx.translate(-bx, -by);
+        ctx.beginPath(); ctx.arc(bx, by, rx, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       }
-
-      const tex = (() => { const _t = new THREE.CanvasTexture(cv); _t.channel = 0; return _t; })();
+      const tex = new THREE.CanvasTexture(cv);
+      tex.channel = 0;
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(3, 3);
-
       const mat = new THREE.MeshBasicMaterial({
-        map:         tex,
-        transparent: true,
-        opacity:     p.cloudOpacity * (1 - i * 0.15),
-        depthWrite:  false,
-        color:       new THREE.Color(p.cloudColor),
-        blending:    THREE.NormalBlending,
+        map: tex, transparent: true,
+        opacity:    p.cloudOpacity * (1 - i * 0.15),
+        depthWrite: false,
+        color:      new THREE.Color(p.cloudColor),
+        blending:   THREE.NormalBlending,
       });
       const plane = new THREE.Mesh(new THREE.PlaneGeometry(cloudScales[i], cloudScales[i]), mat);
       plane.rotation.x = -Math.PI / 2;
@@ -965,39 +1509,23 @@ export const Build = {
       clouds.push({ plane, speed: cloudSpeeds[i], tex });
     });
 
-    // Horizon haze band — thin cylinder to soften land/sky join
     const hazeMat = new THREE.MeshBasicMaterial({
       color:       new THREE.Color(p.bot).lerp(new THREE.Color(p.fog), 0.5),
-      transparent: true,
-      opacity:     0.45,
-      depthWrite:  false,
-      side:        THREE.BackSide,
+      transparent: true, opacity: 0.45, depthWrite: false, side: THREE.BackSide,
     });
     const haze = new THREE.Mesh(new THREE.CylinderGeometry(138, 138, 18, 32, 1, true), hazeMat);
-    haze.position.y = 6;
-    haze.renderOrder = -1;
+    haze.position.y = 6; haze.renderOrder = -1;
     scene.add(haze);
 
     return {
-      dome,
-      clouds,
-      /**
-       * Call each frame with delta time and the level camera.
-       * FIX: camera is passed in explicitly — previously used scene.children[0]
-       * which crashed projectObject when that child was disposed or undefined.
-       * @param {number} dt
-       * @param {THREE.Camera} camera
-       */
+      dome, clouds,
       update(dt, camera) {
         clouds.forEach(({ tex }) => {
           tex.offset.x += dt * 0.0008;
           tex.offset.y += dt * 0.0003;
           tex.needsUpdate = true;
         });
-        // Dome follows camera so the horizon stays correctly centred
-        if (camera) {
-          dome.position.set(camera.position.x, 0, camera.position.z);
-        }
+        if (camera) dome.position.set(camera.position.x, 0, camera.position.z);
       },
     };
   },
@@ -1007,20 +1535,15 @@ export const Build = {
 //  PARTICLE UPDATER
 // ─────────────────────────────────────────────────────────────
 export class FXUpdater {
-  constructor() {
-    this._particles = [];
-    this._items     = [];
-    this._t = 0;
-  }
+  constructor() { this._particles = []; this._items = []; this._t = 0; }
 
   registerParticles(pts) { this._particles.push(pts); }
-  registerItem(mesh)      { this._items.push(mesh); }
+  registerItem(mesh)     { this._items.push(mesh); }
 
   update(dt) {
     this._t += dt;
 
     for (const pts of this._particles) {
-      // FIX: guard against particles whose geometry has been disposed between frames
       if (!pts.geometry || !pts.geometry.attributes.position) continue;
       const pos  = pts.geometry.attributes.position.array;
       const vel  = pts.userData.vel;
@@ -1048,7 +1571,6 @@ export class FXUpdater {
     }
 
     for (const mesh of this._items) {
-      // FIX: guard against item meshes removed from scene mid-loop
       if (!mesh || !mesh.parent || !mesh.material || !mesh.userData.baseEmissive) continue;
       const pulse = 0.5 + 0.5 * Math.sin(this._t * 3.5 + mesh.position.x * 0.7);
       mesh.material.emissiveIntensity = mesh.userData.baseEmissive * (0.6 + 0.8 * pulse);
@@ -1066,8 +1588,8 @@ export class FXUpdater {
 // ─────────────────────────────────────────────────────────────
 export class Interactor {
   constructor(camera, scene) {
-    this.camera = camera; this.scene = scene;
-    this.ray    = new THREE.Raycaster(); this.ray.far = 2.5;
+    this.camera  = camera; this.scene = scene;
+    this.ray     = new THREE.Raycaster(); this.ray.far = 2.5;
     this._center = new THREE.Vector2(0, 0); this.hovered = null;
   }
   update(interactables) {
@@ -1101,7 +1623,7 @@ export class HUD {
     `;
     this._crosshair.innerHTML = `<svg viewBox="0 0 20 20">
       <circle cx="10" cy="10" r="1.8" fill="white" opacity="0.9"/>
-      <line x1="10" y1="2" x2="10" y2="7"  stroke="white" stroke-width="1.2" opacity="0.75" stroke-linecap="round"/>
+      <line x1="10" y1="2"  x2="10" y2="7"  stroke="white" stroke-width="1.2" opacity="0.75" stroke-linecap="round"/>
       <line x1="10" y1="13" x2="10" y2="18" stroke="white" stroke-width="1.2" opacity="0.75" stroke-linecap="round"/>
       <line x1="2"  y1="10" x2="7"  y2="10" stroke="white" stroke-width="1.2" opacity="0.75" stroke-linecap="round"/>
       <line x1="13" y1="10" x2="18" y2="10" stroke="white" stroke-width="1.2" opacity="0.75" stroke-linecap="round"/>
@@ -1111,13 +1633,10 @@ export class HUD {
     this._info = document.createElement('div');
     this._info.style.cssText = `
       position:absolute;top:20px;left:20px;
-      background:rgba(8,4,22,0.78);
-      border-radius:14px;padding:12px 18px;font-size:14px;line-height:1.8;
-      border:1px solid rgba(200,150,255,0.25);
-      text-shadow:0 1px 6px #0009;
-      backdrop-filter:blur(12px);
-      box-shadow:0 4px 32px rgba(80,0,180,0.18);
-      transition:opacity 0.3s;
+      background:rgba(8,4,22,0.78);border-radius:14px;padding:12px 18px;
+      font-size:14px;line-height:1.8;border:1px solid rgba(200,150,255,0.25);
+      text-shadow:0 1px 6px #0009;backdrop-filter:blur(12px);
+      box-shadow:0 4px 32px rgba(80,0,180,0.18);transition:opacity 0.3s;
     `;
     this.el.appendChild(this._info);
 
@@ -1128,8 +1647,7 @@ export class HUD {
       padding:9px 28px;font-size:15px;font-weight:500;letter-spacing:0.3px;
       border:1px solid rgba(200,150,255,0.35);
       transition:opacity 0.2s,transform 0.2s;opacity:0;
-      backdrop-filter:blur(10px);
-      box-shadow:0 2px 16px rgba(140,60,255,0.2);
+      backdrop-filter:blur(10px);box-shadow:0 2px 16px rgba(140,60,255,0.2);
     `;
     this.el.appendChild(this._prompt);
 
@@ -1164,18 +1682,15 @@ export class HUD {
     btn.onmouseenter = () => { btn.style.transform = 'scale(1.05)'; btn.style.boxShadow = '0 6px 40px #a050ffaa,0 0 0 1px rgba(255,255,255,0.18) inset'; };
     btn.onmouseleave = () => { btn.style.transform = 'scale(1)';    btn.style.boxShadow = '0 4px 32px #a050ff66,0 0 0 1px rgba(255,255,255,0.12) inset'; };
     btn.addEventListener('click', () => {
-    this._overlay.style.display = 'none';
-    this._overlayVisible = false;
-    if (this._onStart) this._onStart();
-    setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
+      this._overlay.style.display = 'none';
+      this._overlayVisible = false;
+      if (this._onStart) this._onStart();
+      setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
     });
   }
 
-  // FIX: store callback, don't call immediately
   onStart(fn) { this._onStart = fn; }
-
   get isOverlayOpen() { return this._overlayVisible; }
-
   setInfo(html) { this._info.innerHTML = html; }
 
   showPrompt(text) {
@@ -1184,7 +1699,7 @@ export class HUD {
     this._prompt.style.transform = 'translateX(-50%) translateY(-4px)';
   }
   hidePrompt() {
-    this._prompt.style.opacity  = '0';
+    this._prompt.style.opacity   = '0';
     this._prompt.style.transform = 'translateX(-50%) translateY(0px)';
   }
 
@@ -1195,23 +1710,23 @@ export class HUD {
   }
 
   showOverlay(html, btnText, onBtn) {
-  const _cb = onBtn;
-  this._overlay.innerHTML = html + `<button id="ovBtn" style="
-    margin-top:20px;padding:13px 38px;font-size:16px;font-weight:700;
-    border:none;border-radius:999px;cursor:pointer;
-    background:linear-gradient(135deg,#a050ff,#ff50a0);color:#fff;
-    box-shadow:0 4px 28px #a050ff66;letter-spacing:0.5px;">${btnText}</button>`;
-  this._overlay.style.display = 'flex';
-  this._overlay.style.pointerEvents = 'all';
-  this._overlayVisible = true;
-  this._overlay.querySelector('#ovBtn').onclick = () => {
-    this._overlay.style.display = 'none';
-    this._overlay.style.pointerEvents = 'none';
-    this._overlayVisible = false;
-    if (_cb) _cb();
-    setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
-  };
-}
+    const _cb = onBtn;
+    this._overlay.innerHTML = html + `<button id="ovBtn" style="
+      margin-top:20px;padding:13px 38px;font-size:16px;font-weight:700;
+      border:none;border-radius:999px;cursor:pointer;
+      background:linear-gradient(135deg,#a050ff,#ff50a0);color:#fff;
+      box-shadow:0 4px 28px #a050ff66;letter-spacing:0.5px;">${btnText}</button>`;
+    this._overlay.style.display = 'flex';
+    this._overlay.style.pointerEvents = 'all';
+    this._overlayVisible = true;
+    this._overlay.querySelector('#ovBtn').onclick = () => {
+      this._overlay.style.display = 'none';
+      this._overlay.style.pointerEvents = 'none';
+      this._overlayVisible = false;
+      if (_cb) _cb();
+      setTimeout(() => document.getElementById('canvas').requestPointerLock(), 300);
+    };
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1219,9 +1734,9 @@ export class HUD {
 // ─────────────────────────────────────────────────────────────
 export class GameLoop {
   constructor() { this._last = 0; this._handlers = []; this._running = false; }
-  add(fn) { this._handlers.push(fn); }
-  start() { this._running = true; requestAnimationFrame(t => this._tick(t)); }
-  stop()  { this._running = false; }
+  add(fn)  { this._handlers.push(fn); }
+  start()  { this._running = true; requestAnimationFrame(t => this._tick(t)); }
+  stop()   { this._running = false; }
   _tick(t) {
     if (!this._running) return;
     const dt = Math.min((t - this._last) / 1000, 0.05);
@@ -1265,16 +1780,13 @@ export class Engine {
     this.input        = new Input();
     this.audio        = new Audio();
     this.hud          = new HUD();
-    // In Engine constructor, after: this.hud = new HUD();
-this.input._canRelock = () => !this.hud.isOverlayOpen && !!this.currentLevel;
+    this.input._canRelock = () => !this.hud.isOverlayOpen && !!this.currentLevel;
     this.loop         = new GameLoop();
     this.currentLevel = null;
     this._levels      = {};
     this._stepTimer   = 0;
     this.selectedCharacter = null;
 
-    // FIX: guard both E key and click — only fire onInteract when pointer
-    // is locked (i.e. the overlay is dismissed and player is in-game).
     document.addEventListener('keydown', e => {
       if (e.code === 'KeyE' && this.currentLevel && this.input.locked) {
         this.currentLevel.onInteract();
@@ -1287,8 +1799,6 @@ this.input._canRelock = () => !this.hud.isOverlayOpen && !!this.currentLevel;
     });
 
     this.loop.add((dt) => this._frame(dt));
-
-    // Expose on window for browser console dev access: window._engine.goTo('driving')
     window._engine = this;
   }
 
@@ -1308,88 +1818,80 @@ this.input._canRelock = () => !this.hud.isOverlayOpen && !!this.currentLevel;
     level.onEnter();
   }
 
-  // FIX: nextLevel is a real method on Engine.
-  // main.js can override it, but this ensures levels that call
-  // this.engine.nextLevel('driving') won't crash if main.js hasn't patched it yet.
   nextLevel(currentName) {
     console.warn(`nextLevel('${currentName}') called but not yet wired by main.js`);
   }
 
-  // Dev helper — jump to any level from the browser console or keyboard shortcut
-  goTo(name) {
-    this.go(name);
-  }
+  goTo(name) { this.go(name); }
 
   _toggleDevPanel() {
-  if (this._devPanel) {
-    this._devPanel.remove();
-    this._devPanel = null;
-    if (this.currentLevel?.fp) {
-      document.getElementById('canvas').requestPointerLock();
-    }
-    return;
-  }
-
-  document.exitPointerLock();
-
-  const panel = document.createElement('div');
-  panel.style.cssText = `
-    position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-    background:rgba(8,4,28,0.97);border:1.5px solid rgba(180,140,255,0.4);
-    border-radius:20px;padding:28px 36px;z-index:9999;
-    font-family:'Segoe UI',sans-serif;color:#fff;
-    box-shadow:0 8px 48px rgba(100,40,220,0.4);min-width:280px;
-    backdrop-filter:blur(16px);
-  `;
-  panel.innerHTML = `
-    <div style="font-size:20px;font-weight:900;margin-bottom:6px;
-      background:linear-gradient(135deg,#ffd700,#c890ff);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent">
-      ✨ Dev Level Select</div>
-    <div style="font-size:12px;color:#888;margin-bottom:20px">
-      Press \` to close · changes take effect immediately</div>
-    <div id="devLevelBtns" style="display:flex;flex-direction:column;gap:10px"></div>
-  `;
-
-  const levels = [
-    { key:'grocery',    icon:'🛒', label:'Grocery Run'    },
-    { key:'cooking',    icon:'🍳', label:'Cooking'        },
-    { key:'packing',    icon:'🧺', label:'Packing'        },
-    { key:'driving',    icon:'🚗', label:'Driving'        },
-    { key:'stargazing', icon:'🌟', label:'Stargazing'     },
-    { key:'letter',     icon:'✉️', label:'Letter'         },
-    { key:'elden', icon:'⚜', label:'Secret Level' },
-    {key:'tardis', icon:'✨', label: 'The End'},
-  ];
-
-  const btns = panel.querySelector('#devLevelBtns');
-  levels.forEach(({ key, icon, label }) => {
-    const isCurrent = this.currentLevel === this._levels[key]?.level;
-    const btn = document.createElement('button');
-    btn.style.cssText = `
-      padding:11px 22px;border-radius:12px;border:none;cursor:pointer;
-      font-size:15px;font-weight:600;text-align:left;
-      background:${isCurrent ? 'linear-gradient(135deg,#6030cc,#cc50a0)' : 'rgba(255,255,255,0.07)'};
-      color:#fff;transition:background 0.15s;
-      border:1px solid ${isCurrent ? 'transparent' : 'rgba(255,255,255,0.1)'};
-    `;
-    btn.textContent = `${icon}  ${label}${isCurrent ? '  ◀ current' : ''}`;
-    btn.onmouseenter = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,0.14)'; };
-    btn.onmouseleave = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,0.07)'; };
-    btn.onclick = () => {
+    if (this._devPanel) {
       this._devPanel.remove();
       this._devPanel = null;
-      this.go(key);
-      setTimeout(() => {
-        if (this.currentLevel?.fp) document.getElementById('canvas').requestPointerLock();
-      }, 100);
-    };
-    btns.appendChild(btn);
-  });
+      if (this.currentLevel?.fp) document.getElementById('canvas').requestPointerLock();
+      return;
+    }
 
-  document.body.appendChild(panel);
-  this._devPanel = panel;
-}
+    document.exitPointerLock();
+
+    const panel = document.createElement('div');
+    panel.style.cssText = `
+      position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      background:rgba(8,4,28,0.97);border:1.5px solid rgba(180,140,255,0.4);
+      border-radius:20px;padding:28px 36px;z-index:9999;
+      font-family:'Segoe UI',sans-serif;color:#fff;
+      box-shadow:0 8px 48px rgba(100,40,220,0.4);min-width:280px;
+      backdrop-filter:blur(16px);
+    `;
+    panel.innerHTML = `
+      <div style="font-size:20px;font-weight:900;margin-bottom:6px;
+        background:linear-gradient(135deg,#ffd700,#c890ff);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent">
+        ✨ Dev Level Select</div>
+      <div style="font-size:12px;color:#888;margin-bottom:20px">
+        Press \` to close · changes take effect immediately</div>
+      <div id="devLevelBtns" style="display:flex;flex-direction:column;gap:10px"></div>
+    `;
+
+    const levels = [
+      { key:'grocery',    icon:'🛒', label:'Grocery Run' },
+      { key:'cooking',    icon:'🍳', label:'Cooking'     },
+      { key:'packing',    icon:'🧺', label:'Packing'     },
+      { key:'driving',    icon:'🚗', label:'Driving'     },
+      { key:'stargazing', icon:'🌟', label:'Stargazing'  },
+      { key:'letter',     icon:'✉️',  label:'Letter'      },
+      { key:'elden',      icon:'⚜',  label:'Secret Level'},
+      { key:'tardis',     icon:'✨', label:'The End'     },
+    ];
+
+    const btns = panel.querySelector('#devLevelBtns');
+    levels.forEach(({ key, icon, label }) => {
+      const isCurrent = this.currentLevel === this._levels[key]?.level;
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        padding:11px 22px;border-radius:12px;border:none;cursor:pointer;
+        font-size:15px;font-weight:600;text-align:left;
+        background:${isCurrent ? 'linear-gradient(135deg,#6030cc,#cc50a0)' : 'rgba(255,255,255,0.07)'};
+        color:#fff;transition:background 0.15s;
+        border:1px solid ${isCurrent ? 'transparent' : 'rgba(255,255,255,0.1)'};
+      `;
+      btn.textContent = `${icon}  ${label}${isCurrent ? '  ◀ current' : ''}`;
+      btn.onmouseenter = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,0.14)'; };
+      btn.onmouseleave = () => { if (!isCurrent) btn.style.background = 'rgba(255,255,255,0.07)'; };
+      btn.onclick = () => {
+        this._devPanel.remove();
+        this._devPanel = null;
+        this.go(key);
+        setTimeout(() => {
+          if (this.currentLevel?.fp) document.getElementById('canvas').requestPointerLock();
+        }, 100);
+      };
+      btns.appendChild(btn);
+    });
+
+    document.body.appendChild(panel);
+    this._devPanel = panel;
+  }
 
   _frame(dt) {
     const lvl = this.currentLevel;
@@ -1408,16 +1910,14 @@ this.input._canRelock = () => !this.hud.isOverlayOpen && !!this.currentLevel;
     this.renderer.render(lvl.scene, lvl.camera);
   }
 
-  // FIX: start() just kicks off the loop; the HUD button fires _onStart when clicked.
-  start() {
-    this.loop.start();
-  }
+  start()  { 
+      this.renderer.resize(); // force correct pixel ratio on all composers before first frame
 
-  // Set the callback that fires when the player clicks "Click to Begin"
+    this.loop.start();
+   }
+
   onStart(fn) {
     this.hud.onStart(fn);
-
-    // Dev level selector — press backtick ` to toggle
     this._devPanel = null;
     document.addEventListener('keydown', e => {
       if (e.code === 'Backquote') this._toggleDevPanel();

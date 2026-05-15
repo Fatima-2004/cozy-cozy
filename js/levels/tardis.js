@@ -2070,6 +2070,7 @@ export class TardisLevel extends Level {
 
   // ─────────────────────────────────────────────
   onEnter() {
+    this.engine.audio.playLevelMusic('tardis'); // cleanest — stops old, starts new
     this.engine.renderer.setActiveScene(this.scene, this.camera, 'driving');
     this.engine.renderer.gl.toneMappingExposure = 0.80;
 

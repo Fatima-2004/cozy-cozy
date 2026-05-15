@@ -1057,6 +1057,8 @@ export class Cooking extends Level {
   //  LIFECYCLE
   // ══════════════════════════════════════════════════════════
   onEnter(){
+    this.engine.audio.playLevelMusic('cooking'); // cleanest — stops old, starts new
+
     this.step=STEP.SEASON;
     this._seasonCount=0;
     this._cookProgress=0; this._flips=0; this._isFlipping=false; this._flipT=0;
@@ -1091,8 +1093,8 @@ export class Cooking extends Level {
   }
 
   onExit(){
-    this.engine.audio.play('musicStop');
-    this._hideBar();
+  this.engine.audio.musicStop();    
+  this._hideBar();
     if(this._burnerGlow) this._burnerGlow.intensity=0;
   }
 

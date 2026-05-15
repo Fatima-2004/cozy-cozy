@@ -121,8 +121,8 @@ function showEnding() {
       bellies full, hearts full. ✨</div>
   `, 'Play Again 🔄', () => {
     // On replay, show character select again
-    showCharacterSelect((chosen) => {
-      engine.selectedCharacter = chosen;
+  showCharacterSelect(engine, (chosen) => {
+  engine.selectedCharacter = chosen;
       goLevel('grocery');
     });
   });
@@ -142,10 +142,9 @@ document.addEventListener('keydown', e => {
 // ─────────────────────────────────────────────────────────────
 //  Start — show character select BEFORE entering the game
 // ─────────────────────────────────────────────────────────────
-engine.start();
+engine.start();        // ← must be here
 engine.onStart(() => {
-  // ← CHANGED: show character select, then start the game
-  showCharacterSelect((chosen) => {
+  showCharacterSelect(engine, (chosen) => {  // ← add engine here
     engine.selectedCharacter = chosen;
     goLevel('grocery');
   });

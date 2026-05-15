@@ -629,6 +629,8 @@ export class Letter extends Level {
   //  LIFECYCLE
   // ══════════════════════════════════════════════════════════
   onEnter() {
+    this.engine.audio.playLevelMusic('letter'); // cleanest — stops old, starts new
+
     if (!this._el) this._buildUI();
     this._el.style.display = 'block';
     this._showWritePhase();

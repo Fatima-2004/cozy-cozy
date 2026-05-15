@@ -576,6 +576,7 @@ export class Packing extends Level {
   //  LIFECYCLE
   // ══════════════════════════════════════════════════════════
   onEnter() {
+    this.engine.audio.playLevelMusic('packing'); // cleanest — stops old, starts new
     this._held = null; this._placed = []; this._done = false; this._currentCell = null;
     this._placedMeshes.forEach(m => this.scene.remove(m)); this._placedMeshes = [];
     this._initGrid();
@@ -586,7 +587,6 @@ export class Packing extends Level {
     this._ghostMesh.visible = false;
     this.fp.teleport(3, 0, 2, Math.PI*0.9);
     this.fp.speed = 3.2;
-    this.engine.audio.play('music', 105);
     this._updateHUD();
   }
 

@@ -1050,6 +1050,7 @@ export class Grocery extends Level {
 
   // ─────────────────────────────────────────────────────────
   onEnter() {
+    this.engine.audio.playLevelMusic('grocery'); // cleanest — stops old, starts new
     this.fp.speed = 9;
     this.fp.teleport(0, 0, 5, Math.PI);
     this._items.forEach(e => { e.picked=false; e.mesh.visible=true; });

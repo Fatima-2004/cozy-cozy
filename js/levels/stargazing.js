@@ -833,6 +833,7 @@ _buildGround(s) {
 
   // ══════════════════════════════════════════════════════════
   onEnter() {
+   this.engine.audio.playLevelMusic('stargazing');
     this._t=0; this._done=false;
     this._yaw=0.3; this._pitch=1.12;
     this._fireworks=[];
@@ -855,8 +856,8 @@ _buildGround(s) {
   }
 
   onExit() {
-    this.engine.audio.play('musicStop');
-    if(this._lockOnClick)
+  this.engine.audio.musicStop(); 
+   if(this._lockOnClick)
       document.getElementById('canvas').removeEventListener('click',this._lockOnClick);
   }
 

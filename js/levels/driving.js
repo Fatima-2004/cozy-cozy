@@ -1187,6 +1187,8 @@ win.rotation.y = px > 0 ? -Math.PI / 2 : Math.PI / 2;
   //  LIFECYCLE
   // ══════════════════════════════════════════════════════════
   onEnter() {
+    this.engine.audio.playLevelMusic('driving'); // cleanest — stops old, starts new
+
     this.carPos.set(LANE_CX[2], 0, 0);
     this.carSpeed  = 0;
     this.carSteer  = 0;
@@ -1219,7 +1221,6 @@ win.rotation.y = px > 0 ? -Math.PI / 2 : Math.PI / 2;
     this.camera.updateProjectionMatrix();
     this._driveHUD.style.display = 'flex';
     this.engine.audio.play('engine');
-    this.engine.audio.play('music', 130);
 
     this.engine.hud.setInfo(`
       <div style="font-weight:700;font-size:13px;color:#ffd700;margin-bottom:6px">🚗 Road Trip</div>
@@ -1314,7 +1315,7 @@ win.rotation.y = px > 0 ? -Math.PI / 2 : Math.PI / 2;
       this.engine.audio.play('horn'); this._hornTimer = 0.6;
     }
 
-    this.engine.audio.play('engineRev', Math.abs(this.carSpeed) / MAX_SPEED);
+this.engine.audio.sfx.engineRev(this.engine.audio, Math.abs(this.carSpeed) / MAX_SPEED);
 
     // ── traffic ───────────────────────────────────────────
     this._updateTraffic(dt);

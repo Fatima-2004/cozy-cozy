@@ -3,7 +3,7 @@
 //  Studio Ghibli-inspired character selection screen
 // ============================================================
 
-export function showCharacterSelect(onSelect) {
+export function showCharacterSelect(engine, onSelect) {
 
   // ── Fonts ────────────────────────────────────────────────
   if (!document.getElementById('cs-fonts')) {
@@ -546,6 +546,7 @@ export function showCharacterSelect(onSelect) {
   `;
 
   document.body.appendChild(root);
+engine.audio.playLevelMusic('characterSelect');
 
   // ── Canvas: stars + soft moon ────────────────────────────
   const canvas = root.querySelector('#cs-canvas');
@@ -704,6 +705,8 @@ export function showCharacterSelect(onSelect) {
   // ── Pick ─────────────────────────────────────────────────
   function pick(name) {
     clearInterval(shootInterval);
+      engine.audio.musicStop(); // ← add this
+
     const card  = root.querySelector(`#cs-${name}`);
     const isAv  = name === 'avicula';
     dustBurst(card, isAv);

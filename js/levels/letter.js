@@ -649,7 +649,9 @@ export class Letter extends Level {
   }
 
   onExit() {
+     this.engine.audio.play('musicStop');
     if (this._el) this._el.style.display = 'none';
+
   }
 
   update(_dt) {

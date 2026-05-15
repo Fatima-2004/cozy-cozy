@@ -570,7 +570,6 @@ export class Audio {
   musicLetter(bpm)     { this.sfx.musicLetter(this, bpm); }
   musicTardis(bpm)          { this.sfx.musicTardis(this, bpm); }
   musicCharacterSelect(bpm) { this.sfx.musicCharacterSelect(this, bpm); }
-engineRev(rpm) { this.sfx.engineRev(this, rpm); }
 
   // Stop current music then start the named level track.
   playLevelMusic(levelName, bpm) {
@@ -708,427 +707,412 @@ engineRev(rpm) { this.sfx.engineRev(this, rpm); }
     },
 
     // ════════════════════════════════════════════════════════
-    //  LEVEL MUSIC
+    //  LEVEL MUSIC — romcom, sweet, magical, each distinct
+    //  Piano-like tones: stacked harmonics, melodic sequences
     //  Call via: engine.audio.playLevelMusic('grocery')
-    //  or directly: engine.audio.play('musicGrocery')
     // ════════════════════════════════════════════════════════
 
     // ── DEFAULT FALLBACK
     music: (a, bpm = 110) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      const notes = [261.63, 293.66, 329.63, 392, 440];
+      const notes = [261.63, 329.63, 392, 523.25, 659.25];
       const step = 60 / bpm / 2;
       const schedule = () => {
         if (a._musicStop) { a._musicPlaying = false; return; }
-        const f = notes[Math.floor(Math.random() * notes.length)] * (Math.random() > 0.5 ? 2 : 1);
-        a._osc('sine', f, 0.07, step * 1.8);
-        if (Math.random() > 0.6)  a._osc('sine', f * 3,   0.025, step * 1.2);
-        if (Math.random() > 0.75) a._osc('triangle', f * 0.5, 0.05,  step * 2.5);
+        const f = notes[Math.floor(Math.random() * notes.length)];
+        a._osc('sine', f, 0.10, step * 1.8);
+        a._osc('sine', f * 2, 0.03, step * 1.2);
         a._musicTimer = setTimeout(schedule, step * 1000 * 0.88);
       };
       schedule();
     },
 
-    // ── 🎭 CHARACTER SELECT — warm, inviting, magical anticipation
-    // Gentle ascending arpeggios in C major — sparkly and welcoming,
-    // the feeling of choosing your adventure before it begins.
-    musicCharacterSelect: (a, bpm = 88) => {
+    // ── 🎭 CHARACTER SELECT — welcoming, light, music box feel
+    musicCharacterSelect: (a, bpm = 100) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      const arp  = [261.63, 329.63, 392, 523.25, 659.25, 784]; // C major arpeggio
+      const seq  = [261.63, 329.63, 392, 523.25, 392, 329.63, 261.63, 196];
       const step = 60 / bpm / 2;
-      let arpIdx = 0;
+      let idx = 0;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.22, dur * 0.55);
+        a._osc('triangle', f * 0.5, vol * 0.18, dur * 1.30);
+      };
       const schedule = () => {
         if (a._musicStop) { a._musicPlaying = false; return; }
-        const octave = Math.floor(arpIdx / arp.length) % 2 === 0 ? 1 : 0.5;
-        const f = arp[arpIdx % arp.length] * octave;
-        a._osc('sine', f, 0.10, step * 1.6);
-        if (Math.random() > 0.6)  a._osc('sine', f * 2,    0.04, step * 1.4);
-        if (arpIdx % 4 === 0)     a._osc('triangle', f * 0.25, 0.08, step * 3.0);
-        if (Math.random() > 0.72) a._osc('sine', f * 3, 0.03, step * 1.2);
-        arpIdx++;
-        a._musicTimer = setTimeout(schedule, step * 1000 * (0.8 + Math.random() * 0.25));
+        piano(seq[idx % seq.length], 0.11, step * 1.6);
+        if (idx % 4 === 0) piano(seq[idx % seq.length] * 1.26, 0.05, step * 2.0);
+        idx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * 0.92);
       };
       schedule();
     },
 
-    // ── 🛒 GROCERY — bright, jingly, playful whimsy
-    // Crisp bell tones in a major scale, quick tempo, occasional
-    // chime flourishes — like a charming market on a sunny morning.
-    musicGrocery: (a, bpm = 126) => {
+    // ── 🛒 GROCERY — bright bouncy waltz, opening-credits energy
+    // Skipping through the market, sunlight through windows.
+    musicGrocery: (a, bpm = 160) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      // C major scale — cheerful and open
-      const melody = [523.25, 587.33, 659.25, 698.46, 783.99, 880, 987.77, 1046.50];
-      const bass   = [130.81, 164.81, 196.00, 261.63];
+      const melody = [523.25, 659.25, 783.99, 659.25, 587.33, 523.25,
+                       440,    523.25, 659.25, 523.25, 493.88, 440];
+      const bass   = [130.81, 196, 261.63, 196];
+      const step   = 60 / bpm / 3;
+      let mIdx = 0, bIdx = 0;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.20, dur * 0.50);
+        a._osc('triangle', f * 0.5, vol * 0.12, dur * 1.20);
+      };
+      const schedule = () => {
+        if (a._musicStop) { a._musicPlaying = false; return; }
+        piano(melody[mIdx % melody.length], 0.13, step * 1.4);
+        if (mIdx % 3 === 0) piano(bass[bIdx % bass.length], 0.09, step * 2.5);
+        if (mIdx % 3 === 1) piano(bass[(bIdx + 2) % bass.length] * 1.5, 0.05, step * 1.8);
+        if (mIdx % 6 === 0) bIdx++;
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.88 + Math.random() * 0.08));
+      };
+      schedule();
+    },
+
+    // ── 🍳 COOKING — warm, cozy, two people in a small kitchen
+    // The music when someone watches you cook and you pretend not to notice.
+    musicCooking: (a, bpm = 88) => {
+      if (!a._ready || a._musicPlaying) return;
+      a._musicPlaying = true; a._musicStop = false;
+      const melody = [392, 440, 493.88, 392, 440, 587.33, 523.25,
+                       493.88, 440, 392, 349.23, 392];
       const step   = 60 / bpm / 2;
-      const schedule = () => {
-        if (a._musicStop) { a._musicPlaying = false; return; }
-        // bright bell melody
-        const f = melody[Math.floor(Math.random() * melody.length)];
-        a._osc('sine', f, 0.13, step * 1.4);
-        // second voice harmony — third above
-        if (Math.random() > 0.5) a._osc('sine', f * 1.26, 0.07, step * 1.2);
-        // sparkly overtone
-        if (Math.random() > 0.6) a._osc('sine', f * 2, 0.05, step * 0.9);
-        // chime run — fast ascending flicker
-        if (Math.random() > 0.82) {
-          [0, 60, 120, 180].forEach((ms, i) =>
-            setTimeout(() => a._osc('sine', melody[i] * 2, 0.09, 0.12), ms)
-          );
-        }
-        // warm bass pluck on the beat
-        if (Math.random() > 0.55) a._osc('triangle', bass[Math.floor(Math.random() * bass.length)], 0.1, step * 1.8);
-        a._musicTimer = setTimeout(schedule, step * 1000 * (0.6 + Math.random() * 0.3));
-      };
-      schedule();
-    },
-
-    // ── 🍳 COOKING — warm, cozy, kitchen-magic
-    // Mellow triangle tones and soft bell hits in a pentatonic
-    // scale — the sound of something wonderful simmering gently.
-    musicCooking: (a, bpm = 96) => {
-      if (!a._ready || a._musicPlaying) return;
-      a._musicPlaying = true; a._musicStop = false;
-      // D pentatonic major — warm and homey
-      const notes = [293.66, 329.63, 369.99, 440, 493.88, 587.33];
-      const step  = 60 / bpm / 2;
-      // persistent gentle simmer drone
+      let mIdx = 0;
       const drone = a.ctx.createOscillator();
-      drone.type = 'sine'; drone.frequency.value = 73.42; // D2
-      const dg = a.ctx.createGain(); dg.gain.value = 0.04;
+      drone.type = 'sine'; drone.frequency.value = 98;
+      const dg = a.ctx.createGain(); dg.gain.value = 0.028;
       drone.connect(dg); dg.connect(a.master); drone.start();
       a._cookDrone = drone;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.18, dur * 0.60);
+        a._osc('triangle', f * 0.5, vol * 0.22, dur * 1.40);
+      };
       const schedule = () => {
         if (a._musicStop) {
           a._musicPlaying = false;
-          try { drone.stop(); } catch(_) {}
-          a._cookDrone = null;
-          return;
+          try { drone.stop(); } catch(_) {} a._cookDrone = null; return;
         }
-        const f = notes[Math.floor(Math.random() * notes.length)];
-        // warm triangle melody
-        a._osc('triangle', f, 0.14, step * 2.4);
-        // soft harmonic halo
-        if (Math.random() > 0.55) a._osc('sine', f * 1.5, 0.06, step * 2.0);
-        // occasional gentle bell ping
-        if (Math.random() > 0.7) {
-          setTimeout(() => {
-            a._osc('sine', f * 2, 0.1, 0.22);
-            a._osc('sine', f * 4, 0.04, 0.18);
-          }, step * 400);
-        }
-        // deep warm bass note
-        if (Math.random() > 0.68) a._osc('sine', f * 0.25, 0.09, step * 3.2);
-        a._musicTimer = setTimeout(schedule, step * 1000 * (0.85 + Math.random() * 0.4));
+        piano(melody[mIdx % melody.length], 0.12, step * 2.2);
+        if (mIdx % 2 === 0) a._osc('sine', melody[mIdx % melody.length] * 1.189, 0.05, step * 2.0);
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (1.0 + Math.random() * 0.15));
       };
       schedule();
     },
 
-    // ── 🧺 PACKING — dreamy, bittersweet, tender romance
-    // Slow minor-tinged melody with long sustains and a warm
-    // lower voice — wistful and hopeful at the same time.
-    musicPacking: (a, bpm = 72) => {
+    // ── 🧺 PACKING — excited anticipation, getting ready for a date
+    // Fluttery and bubbly with little upward leaps of joy.
+    musicPacking: (a, bpm = 112) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      // A natural minor — longing and tender
-      const melody = [220, 246.94, 261.63, 293.66, 329.63, 349.23, 392];
+      const melody = [587.33, 659.25, 740, 587.33, 698.46, 587.33,
+                       523.25, 587.33, 440, 523.25, 587.33, 659.25];
       const step   = 60 / bpm / 2;
+      let mIdx = 0;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.25, dur * 0.45);
+        a._osc('triangle', f * 0.5, vol * 0.10, dur * 1.10);
+      };
       const schedule = () => {
         if (a._musicStop) { a._musicPlaying = false; return; }
-        const f = melody[Math.floor(Math.random() * melody.length)];
-        // slow, breathing sine melody
-        a._osc('sine', f, 0.12, step * 3.2);
-        // lower shadow voice — romantic depth
-        if (Math.random() > 0.45) a._osc('sine', f * 0.5, 0.08, step * 4.0);
-        // high ethereal overtone
-        if (Math.random() > 0.6) a._osc('sine', f * 2, 0.05, step * 2.8);
-        // occasional tender chord swell
-        if (Math.random() > 0.75) {
-          a._osc('sine', f * 1.189, 0.07, step * 3.0); // minor third
-          a._osc('sine', f * 1.498, 0.05, step * 3.0); // perfect fifth
-        }
-        a._musicTimer = setTimeout(schedule, step * 1000 * (1.0 + Math.random() * 0.6));
+        const f = melody[mIdx % melody.length];
+        piano(f, 0.12, step * 1.5);
+        if (mIdx % 4 === 3) setTimeout(() => a._osc('sine', f * 1.5, 0.06, step * 0.8), step * 400);
+        if (mIdx % 4 === 0) a._osc('triangle', f * 0.25, 0.09, step * 3.0);
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.85 + Math.random() * 0.12));
       };
       schedule();
     },
 
-    // ── 🚗 DRIVING — adventurous, romantic, open road
-    // A rolling, forward-moving melody in G major with a hopeful
-    // bass pulse — windows down, going somewhere wonderful together.
-    musicDriving: (a, bpm = 112) => {
+    // ── 🚗 DRIVING — carefree, windows down, singing along
+    // When a great song comes on and everyone gets a bit louder.
+    musicDriving: (a, bpm = 130) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      // G major — bright and adventurous
-      const melody = [392, 440, 493.88, 523.25, 587.33, 659.25, 783.99];
-      const bass   = [98, 130.81, 146.83, 196];
+      const melody = [440, 493.88, 554.37, 659.25, 554.37, 493.88,
+                       440, 392,    440,    493.88, 659.25, 587.33];
+      const bass   = [110, 146.83, 110, 164.81];
       const step   = 60 / bpm / 2;
-      // steady low pulse — the open road
+      let mIdx = 0;
       const beatInterval = setInterval(() => {
         if (a._musicStop) { clearInterval(beatInterval); return; }
-        a._osc('sine', 98, 0.08, 0.12);
+        a._osc('sine', 110, 0.07, 0.10);
       }, (60 / bpm) * 1000);
       a._driveBeat = beatInterval;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.22, dur * 0.48);
+        a._osc('triangle', f * 0.5, vol * 0.12, dur * 1.15);
+      };
       const schedule = () => {
         if (a._musicStop) {
           a._musicPlaying = false;
-          clearInterval(beatInterval);
-          a._driveBeat = null;
-          return;
+          clearInterval(beatInterval); a._driveBeat = null; return;
         }
-        const f = melody[Math.floor(Math.random() * melody.length)];
-        a._osc('sine', f, 0.11, step * 1.6);
-        // bright second voice
-        if (Math.random() > 0.5) a._osc('sine', f * 1.26, 0.07, step * 1.4);
-        // mystical shimmer
-        if (Math.random() > 0.65) a._osc('sine', f * 3, 0.03, step * 1.2);
-        // bass anchor
-        if (Math.random() > 0.6) a._osc('triangle', bass[Math.floor(Math.random() * bass.length)], 0.09, step * 2.0);
-        a._musicTimer = setTimeout(schedule, step * 1000 * (0.75 + Math.random() * 0.35));
+        piano(melody[mIdx % melody.length], 0.12, step * 1.5);
+        if (mIdx % 4 === 0) a._osc('triangle', bass[Math.floor(mIdx / 4) % bass.length], 0.09, step * 2.2);
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.80 + Math.random() * 0.10));
       };
       schedule();
     },
 
-    // ── 🌟 STARGAZING — ethereal, celestial, timeless romance
-    // Slow, widely-spaced tones in an ethereal major scale —
-    // the sound of lying on a blanket watching the sky breathe.
+    // ── 🌟 STARGAZING — slow, tender, the almost-kiss moment
+    // Everything slows down. The pause before.
     musicStargazing: (a, bpm = 52) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      // E major add9 — open, celestial, infinite
-      const notes = [164.81, 185, 220, 246.94, 277.18, 329.63, 369.99, 493.88];
-      const step  = 60 / bpm / 2;
-      // quiet stellar breath drone
+      const melody = [329.63, 415.30, 493.88, 659.25, 554.37,
+                       493.88, 415.30, 329.63, 293.66, 329.63];
+      const step   = 60 / bpm / 2;
+      let mIdx = 0;
       const drone = a.ctx.createOscillator();
-      drone.type = 'sine'; drone.frequency.value = 41.2; // E1
-      const dg = a.ctx.createGain(); dg.gain.value = 0.035;
-      // slow LFO shimmer on drone
-      const lfo = a.ctx.createOscillator(); lfo.frequency.value = 0.07;
-      const lg  = a.ctx.createGain(); lg.gain.value = 0.012;
-      lfo.connect(lg); lg.connect(dg.gain);
-      drone.connect(dg); dg.connect(a.master); drone.start(); lfo.start();
-      a._starDrone = drone; a._starLfo = lfo;
+      drone.type = 'sine'; drone.frequency.value = 82.41;
+      const dg = a.ctx.createGain(); dg.gain.value = 0.022;
+      drone.connect(dg); dg.connect(a.master); drone.start();
+      a._starDrone = drone;
+      const piano = (f, vol, dur) => {
+        a._osc('sine', f,       vol,        dur);
+        a._osc('sine', f * 2,   vol * 0.18, dur * 0.70);
+        a._osc('sine', f * 3,   vol * 0.06, dur * 0.50);
+        a._osc('sine', f * 0.5, vol * 0.20, dur * 1.50);
+      };
       const schedule = () => {
         if (a._musicStop) {
           a._musicPlaying = false;
-          try { drone.stop(); } catch(_) {}
-          try { lfo.stop();   } catch(_) {}
-          a._starDrone = a._starLfo = null;
-          return;
+          try { drone.stop(); } catch(_) {} a._starDrone = null; return;
         }
-        const f = notes[Math.floor(Math.random() * notes.length)];
-        // floating long tone
-        a._osc('sine', f, 0.09, step * 4.5);
-        // celestial octave
-        a._osc('sine', f * 2, 0.06, step * 5.0);
-        // high shimmer star
-        if (Math.random() > 0.55) a._osc('sine', f * 4, 0.04, step * 3.5);
-        // deep anchor
-        if (Math.random() > 0.7)  a._osc('sine', f * 0.5, 0.05, step * 6.0);
-        // rare magical chord bloom
-        if (Math.random() > 0.8) {
-          a._osc('sine', f * 1.26, 0.06, step * 4.5);
-          a._osc('sine', f * 1.498, 0.04, step * 4.5);
+        const f = melody[mIdx % melody.length];
+        piano(f, 0.09, step * 4.0);
+        if (mIdx % 3 === 0) {
+          setTimeout(() => a._osc('sine', f * 1.26,  0.05, step * 3.5), step * 500);
+          setTimeout(() => a._osc('sine', f * 1.498, 0.04, step * 3.5), step * 800);
         }
-        a._musicTimer = setTimeout(schedule, step * 1000 * (1.2 + Math.random() * 1.0));
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (1.1 + Math.random() * 0.4));
       };
       schedule();
     },
 
-    // ── ✉️ LETTER — intimate, romantic, heartfelt
-    // Delicate, close-together tones — like words written slowly
-    // by candlelight, each note chosen with care and tenderness.
-    musicLetter: (a, bpm = 84) => {
+    // ── ✉️ LETTER — tender, intimate, handwritten
+    // Reading something private and precious. Soft as a whisper.
+    musicLetter: (a, bpm = 76) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      // F major — warm and personal
-      const melody = [174.61, 196, 220, 261.63, 293.66, 349.23, 392, 440];
+      const melody = [349.23, 440, 523.25, 440, 392, 349.23,
+                       311.13, 349.23, 440, 523.25, 587.33, 523.25];
       const step   = 60 / bpm / 2;
+      let mIdx = 0;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.16, dur * 0.55);
+        a._osc('triangle', f * 0.5, vol * 0.25, dur * 1.60);
+      };
       const schedule = () => {
         if (a._musicStop) { a._musicPlaying = false; return; }
-        const f = melody[Math.floor(Math.random() * melody.length)];
-        // delicate sine
-        a._osc('sine', f, 0.10, step * 2.6);
-        // tender inner voice
-        if (Math.random() > 0.5) a._osc('sine', f * 1.335, 0.07, step * 2.2); // perfect fourth
-        // warm bass breath
-        if (Math.random() > 0.65) a._osc('sine', f * 0.5, 0.08, step * 3.5);
-        // high shimmer grace note
-        if (Math.random() > 0.7) {
-          setTimeout(() => a._osc('sine', f * 3, 0.05, 0.18), step * 300);
-        }
-        // occasional romantic chord
-        if (Math.random() > 0.78) {
-          a._osc('sine', f * 1.189, 0.06, step * 2.5); // minor third warmth
-        }
-        a._musicTimer = setTimeout(schedule, step * 1000 * (0.9 + Math.random() * 0.5));
+        const f = melody[mIdx % melody.length];
+        piano(f, 0.10, step * 2.8);
+        if (mIdx % 2 === 1) a._osc('sine', f * 0.75, 0.05, step * 2.5);
+        if (mIdx % 6 === 0) setTimeout(() => a._osc('sine', f * 1.189, 0.04, step * 0.6), 0);
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (1.05 + Math.random() * 0.20));
       };
       schedule();
     },
 
-    // ── ⚜️ ELDEN — EXTREMELY SCARY
-    // Subsonic dread, dissonant Phrygian melody, choir beating
-    // clusters, chaotic unpredictable rhythm, sudden piercing
-    // stings, and deep impact thuds. Psychological horror.
-    musicElden: (a, bpm = 38) => {
-      if (!a._ready || a._musicPlaying) return;
-      a._musicPlaying = true; a._musicStop = false;
+    // ── 
+    // ⚜️ ELDEN — EXTREMELY SCARY (rewrite)
+// Key changes from original:
+//   - Sine-based drones with 0.4Hz beating instead of sawtooth (removes buzz)
+//   - Inharmonic note ratios (not a scale) — brain can't resolve them
+//   - Slow swell-in attack on all events (reversed envelope = unnatural)
+//   - Poisson-process scheduling — completely arrhythmic, no BPM lock
+//   - Choir spread across inharmonic partials with independent slow vibrato
+//   - High-freq shimmer replaced with barely-audible beating sine pair
 
-      // ── SUBSONIC FLOOR (felt, not quite heard)
-      const drone1 = a.ctx.createOscillator();
-      drone1.type = 'sine'; drone1.frequency.value = 18;
-      const dg1 = a.ctx.createGain(); dg1.gain.value = 0.28;
-      drone1.connect(dg1); dg1.connect(a.master); drone1.start();
+musicElden: (a, _bpm = 38) => {
+  if (!a._ready || a._musicPlaying) return;
+  a._musicPlaying = true; a._musicStop = false;
 
-      // ── GROWLING MID DRONE with chaotic wobble
-      const drone2 = a.ctx.createOscillator();
-      drone2.type = 'sawtooth'; drone2.frequency.value = 42;
-      const df2 = a.ctx.createBiquadFilter();
-      df2.type = 'highpass'; df2.frequency.value = 55;
-      const dg2 = a.ctx.createGain(); dg2.gain.value = 0.16;
-      const lfo1 = a.ctx.createOscillator(); lfo1.frequency.value = 0.41;
-      const lg1  = a.ctx.createGain(); lg1.gain.value = 28;
-      lfo1.connect(lg1); lg1.connect(drone2.frequency);
-      drone2.connect(df2); df2.connect(dg2); dg2.connect(a.master);
-      drone2.start(); lfo1.start();
+  // Helper: slow-swell sound event (replaces _osc for all melodic hits)
+  // attackTime controls how long gain takes to reach peak — key to horror feel
+  const soundEvent = (freq, type, peakGain, duration, attackTime) => {
+    if (!a.ctx || a._musicStop) return;
+    const o = a.ctx.createOscillator();
+    const g = a.ctx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    const now = a.ctx.currentTime;
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(peakGain, now + attackTime);
+    g.gain.setValueAtTime(peakGain, now + attackTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    o.connect(g); g.connect(a.master);
+    o.start(now); o.stop(now + duration + 0.1);
+  };
 
-      // ── DISSONANT TRITONE CHOIR (beating, sickening)
-      const choirFreqs = [110, 116.54, 123.47, 130.81]; // Am cluster, minor 2nds
-      const choir = choirFreqs.map(f => {
-        const o = a.ctx.createOscillator();
-        o.type = 'triangle'; o.frequency.value = f;
-        const g = a.ctx.createGain(); g.gain.value = 0.028;
-        const filt = a.ctx.createBiquadFilter();
-        filt.type = 'bandpass'; filt.frequency.value = f * 2.5; filt.Q.value = 12;
-        o.connect(filt); filt.connect(g); g.connect(a.master); o.start();
-        return { osc: o, gain: g };
-      });
+  // --- DRONE 1: deep sub-bass sine, felt more than heard ---
+  const drone1 = a.ctx.createOscillator();
+  drone1.type = 'sine'; drone1.frequency.value = 27.5; // A0
+  const dg1 = a.ctx.createGain(); dg1.gain.value = 0.22;
+  drone1.connect(dg1); dg1.connect(a.master); drone1.start();
 
-      // ── HARSH HIGH SHIMMER (constant unease)
-      const shimmer = a.ctx.createOscillator();
-      shimmer.type = 'square'; shimmer.frequency.value = 880;
-      const sg = a.ctx.createGain(); sg.gain.value = 0.008;
-      const sf = a.ctx.createBiquadFilter(); sf.type = 'bandpass'; sf.frequency.value = 1800; sf.Q.value = 6;
-      shimmer.connect(sf); sf.connect(sg); sg.connect(a.master); shimmer.start();
+  // --- DRONE 2: two sines 0.4Hz apart = slow nauseating wobble, no buzz ---
+  const drone2a = a.ctx.createOscillator();
+  const drone2b = a.ctx.createOscillator();
+  drone2a.type = 'sine'; drone2a.frequency.value = 55;
+  drone2b.type = 'sine'; drone2b.frequency.value = 55.4;
+  const dg2 = a.ctx.createGain(); dg2.gain.value = 0.13;
+  drone2a.connect(dg2); drone2b.connect(dg2); dg2.connect(a.master);
+  drone2a.start(); drone2b.start();
 
-      a._eldenDrone  = drone1;
-      a._eldenDrone2 = drone2;
-      a._eldenLfo    = lfo1;
-      a._eldenChoir  = choir;
-      a._eldenShimmer = shimmer;
+  // --- CHOIR: inharmonic partials, each with slow independent vibrato ---
+  // Ratios: ~1.5, ~1.41, ~1.34 — not a scale, brain can't resolve them
+  const choirFreqs = [98, 146.8, 207.7, 277.2];
+  const choir = choirFreqs.map((f, i) => {
+    const o = a.ctx.createOscillator();
+    o.type = 'sine'; // no triangle — fewer harmonics, more ghostly
+    o.frequency.value = f;
+    // Each voice gets a slightly different, very slow vibrato
+    const vib = a.ctx.createOscillator();
+    vib.frequency.value = 0.07 + i * 0.031;
+    const vg = a.ctx.createGain(); vg.gain.value = f * 0.009;
+    vib.connect(vg); vg.connect(o.frequency);
+    const g = a.ctx.createGain();
+    // Gain swells in over 8s — reversed attack shape, deeply unnatural
+    g.gain.setValueAtTime(0, a.ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.028, a.ctx.currentTime + 8);
+    o.connect(g); g.connect(a.master);
+    o.start(); vib.start();
+    return { osc: o, vib, gain: g };
+  });
 
-      // ── MELODIC SCHEDULE — Phrygian dominant, slow, chaotic
-      const notes = [41.2, 43.65, 46.25, 49, 55, 58.27, 65.41, 69.30];
-      const step  = 60 / bpm / 2;
+  // --- SHIMMER: replaced with barely-audible beating sine pair ~1.5kHz ---
+  // Original 880Hz square through bandpass = harsh game buzz; this is subtle unease
+  const whine1 = a.ctx.createOscillator();
+  const whine2 = a.ctx.createOscillator();
+  whine1.type = 'sine'; whine1.frequency.value = 1523;
+  whine2.type = 'sine'; whine2.frequency.value = 1526.7; // 3.7Hz beat
+  const wg = a.ctx.createGain(); wg.gain.value = 0.006;
+  whine1.connect(wg); whine2.connect(wg); wg.connect(a.master);
+  whine1.start(); whine2.start();
 
-      const stopAll = () => {
-        a._musicPlaying = false;
-        try { drone1.stop();   } catch(_) {}
-        try { drone2.stop();   } catch(_) {}
-        try { lfo1.stop();     } catch(_) {}
-        try { shimmer.stop();  } catch(_) {}
-        choir.forEach(c => { try { c.osc.stop(); } catch(_) {} });
-        a._eldenDrone = a._eldenDrone2 = a._eldenLfo = a._eldenChoir = a._eldenShimmer = null;
-      };
+  // Store refs for cleanup
+  a._eldenDrone  = drone1;
+  a._eldenDrone2 = [drone2a, drone2b];
+  a._eldenChoir  = choir;
+  a._eldenWhine  = [whine1, whine2];
 
-      const schedule = () => {
-        if (a._musicStop) { stopAll(); return; }
+  // --- NOTES: inharmonic pitches built on non-musical ratios ---
+  // NOT a scale — ratios chosen so brain hears "pitched" but can't categorise
+  const base = 36.7;
+  const notes = [
+    base,           // root
+    base * 1.18,    // ~minor 2nd+, ambiguous
+    base * 1.414,   // tritone (√2) — devil's interval
+    base * 1.68,    // between m6 and M6 — unresolvable
+    base * 2.07,    // slightly sharp "octave" — wrong in a gut-punch way
+    base * 2.53,    // inharmonic upper partial
+    base * 0.84,    // flat sub-octave — disorienting
+  ];
 
-        // ── LONG UNPREDICTABLE SILENCE (30% chance — anticipation is terror)
-        if (Math.random() > 0.70) {
-          a._musicTimer = setTimeout(schedule, step * 1000 * (2.0 + Math.random() * 3.5));
-          return;
-        }
+  const stopAll = () => {
+    a._musicPlaying = false;
+    const tryStop = o => { try { o.stop(); } catch(_) {} };
+    tryStop(drone1); tryStop(drone2a); tryStop(drone2b);
+    tryStop(whine1); tryStop(whine2);
+    choir.forEach(c => { tryStop(c.osc); tryStop(c.vib); });
+    a._eldenDrone = a._eldenDrone2 = a._eldenChoir = a._eldenWhine = null;
+  };
 
-        const f = notes[Math.floor(Math.random() * notes.length)];
+  // --- SCHEDULING: Poisson process — completely arrhythmic ---
+  // -ln(1 - rand) * mean gives exponentially-distributed gaps
+  // Brain cannot lock on; silences feel threatening, not empty
+  const avgGap = 4200;
+  const schedule = () => {
+    if (a._musicStop) { stopAll(); return; }
 
-        // hollow, distorted low melody
-        a._osc('sawtooth', f, 0.16, step * 3.8);
-        // tritone shadow — the most unsettling interval
-        if (Math.random() > 0.4) a._osc('square', f * 1.414, 0.12, step * 2.8);
-        // minor second grind
-        if (Math.random() > 0.55) {
-          setTimeout(() => a._osc('sawtooth', f * 1.059, 0.09, step * 3), step * 250);
-        }
+    const gap = -Math.log(1 - Math.random()) * avgGap;
 
-        // ── SUDDEN PIERCING SCREAM STING (rare but devastating)
-        if (Math.random() > 0.84) {
-          setTimeout(() => {
-            if (a._musicStop) return;
-            a._osc('square',   880, 0.30, 0.5);
-            a._osc('square',   932, 0.26, 0.45);
-            a._osc('sawtooth', 1174, 0.22, 0.4);
-            a._osc('sine',      28, 0.50, 0.6); // deep impact thud
-          }, Math.random() * step * 600);
-        }
+    a._musicTimer = setTimeout(() => {
+      if (a._musicStop) return;
 
-        // ── CHAOTIC DISSONANT CHORD CLUSTER
-        if (Math.random() > 0.76) {
-          a._osc('sawtooth', f,        0.14, 0.55);
-          a._osc('sawtooth', f * 1.18, 0.12, 0.55);
-          a._osc('sawtooth', f * 1.41, 0.10, 0.55);
-          a._osc('square',   f * 1.78, 0.08, 0.45);
-        }
+      const f = notes[Math.floor(Math.random() * notes.length)];
 
-        // ── DEEP HORROR THUD
-        if (Math.random() > 0.80) {
-          a._osc('sine', 22, 0.40, 0.7);
-          a._osc('sine', 28, 0.28, 0.55);
-        }
+      // Main hit: sine, slow 0.8s swell-in — reversed envelope
+      soundEvent(f, 'sine', 0.18, 3.2, 0.8);
 
-        // ── EPILEPTIC RHYTHM — chaos guarantees dread
-        const variance = 0.35 + Math.random() * 2.8;
-        a._musicTimer = setTimeout(schedule, step * 1000 * variance);
-      };
+      // Inharmonic overtone (ratio 2.07, not clean octave)
+      if (Math.random() > 0.55)
+        setTimeout(() => soundEvent(f * 2.07, 'sine', 0.09, 2.4, 1.2), 180);
+
+      // Sub-drop: very low sine, felt not heard
+      if (Math.random() > 0.75)
+        setTimeout(() => soundEvent(22, 'sine', 0.45, 1.8, 0.3),
+          Math.random() * 800);
+
+      // "Distant scream": inharmonic high sines, very quiet, slow attack
+      // Much scarier than the original loud sawtooth cluster
+      if (Math.random() > 0.88)
+        setTimeout(() => {
+          if (a._musicStop) return;
+          soundEvent(880 * 1.07, 'sine', 0.04, 0.9, 0.6);
+          soundEvent(932 * 0.93, 'sine', 0.03, 0.7, 0.5);
+        }, Math.random() * 3000);
 
       schedule();
-    },
+    }, gap);
+  };
 
-    // ── ✨ TARDIS / THE END — triumphant, transcendent, magical
-    // Ascending major chords, bright harmonics, a sense of
-    // arrival — you made it, and it was worth every step.
-    musicTardis: (a, bpm = 98) => {
+  schedule();
+},
+
+    // ── ✨ TARDIS / THE END — warm, bittersweet, happy ending credits
+    musicTardis: (a, bpm = 90) => {
       if (!a._ready || a._musicPlaying) return;
       a._musicPlaying = true; a._musicStop = false;
-      // C major — pure, triumphant, complete
-      const melody = [392, 440, 493.88, 523.25, 587.33, 659.25, 783.99, 1046.50];
-      const bass   = [65.41, 98, 130.81, 196];
+      const melody = [523.25, 659.25, 587.33, 523.25, 493.88, 440,
+                       523.25, 587.33, 659.25, 783.99, 659.25, 587.33];
       const step   = 60 / bpm / 2;
-      // warm tonic drone
+      let mIdx = 0;
       const drone = a.ctx.createOscillator();
-      drone.type = 'sine'; drone.frequency.value = 65.41; // C2
-      const dg = a.ctx.createGain(); dg.gain.value = 0.045;
+      drone.type = 'sine'; drone.frequency.value = 65.41;
+      const dg = a.ctx.createGain(); dg.gain.value = 0.038;
       drone.connect(dg); dg.connect(a.master); drone.start();
       a._tardisDrone = drone;
+      const piano = (f, vol, dur) => {
+        a._osc('sine',     f,       vol,        dur);
+        a._osc('sine',     f * 2,   vol * 0.22, dur * 0.55);
+        a._osc('triangle', f * 0.5, vol * 0.20, dur * 1.40);
+      };
       const schedule = () => {
         if (a._musicStop) {
           a._musicPlaying = false;
-          try { drone.stop(); } catch(_) {}
-          a._tardisDrone = null;
-          return;
+          try { drone.stop(); } catch(_) {} a._tardisDrone = null; return;
         }
-        const f = melody[Math.floor(Math.random() * melody.length)];
-        // bright triumphant melody
-        a._osc('sine', f, 0.14, step * 1.8);
-        // full harmonic — third + fifth = major chord
-        if (Math.random() > 0.45) a._osc('sine', f * 1.26,  0.09, step * 1.6);
-        if (Math.random() > 0.55) a._osc('sine', f * 1.498, 0.07, step * 1.6);
-        // magical high shimmer
-        if (Math.random() > 0.6) a._osc('sine', f * 2, 0.07, step * 1.4);
-        if (Math.random() > 0.7) a._osc('sine', f * 3, 0.04, step * 1.2);
-        // heroic bass anchor
-        if (Math.random() > 0.55) a._osc('triangle', bass[Math.floor(Math.random() * bass.length)], 0.1, step * 2.2);
-        // triumphant fanfare flourish
-        if (Math.random() > 0.85) {
-          [0, 70, 140, 210, 280].forEach((ms, i) =>
-            setTimeout(() => a._osc('sine', melody[i % melody.length], 0.12, 0.18), ms)
-          );
+        const f = melody[mIdx % melody.length];
+        piano(f, 0.12, step * 2.0);
+        if (mIdx % 6 === 0) {
+          setTimeout(() => piano(f * 1.26,  0.07, step * 2.0), step * 200);
+          setTimeout(() => piano(f * 1.498, 0.05, step * 2.0), step * 350);
         }
-        a._musicTimer = setTimeout(schedule, step * 1000 * (0.65 + Math.random() * 0.35));
+        mIdx++;
+        a._musicTimer = setTimeout(schedule, step * 1000 * (0.90 + Math.random() * 0.15));
       };
       schedule();
     },
+
 
     // ── MUSIC STOP — kills ALL level music immediately
     musicStop: (a) => {
@@ -1910,11 +1894,7 @@ export class Engine {
     this.renderer.render(lvl.scene, lvl.camera);
   }
 
-  start()  { 
-      this.renderer.resize(); // force correct pixel ratio on all composers before first frame
-
-    this.loop.start();
-   }
+  start() { this.loop.start(); }
 
   onStart(fn) {
     this.hud.onStart(fn);

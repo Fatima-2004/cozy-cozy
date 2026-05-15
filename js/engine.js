@@ -162,7 +162,8 @@ export class Renderer {
 
     this.gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.gl.shadowMap.enabled = true;
-    this.gl.shadowMap.type    = THREE.VSMShadowMap;
+    // FIX: VSMShadowMap is incompatible with PointLights — use PCFSoftShadowMap instead
+    this.gl.shadowMap.type    = THREE.PCFSoftShadowMap;
     this.gl.toneMapping       = THREE.ACESFilmicToneMapping;
     this.gl.toneMappingExposure = 0.9;
     this.gl.outputColorSpace  = THREE.SRGBColorSpace;
@@ -193,13 +194,6 @@ export class Renderer {
 
     composer.addPass(new RenderPass(scene, camera));
 
-    //const ssao = new SSAOPass(scene, camera, w, h);
-    //ssao.kernelRadius = profile.ssao.radius;
-    //ssao.minDistance  = profile.ssao.minDistance;
-    //ssao.maxDistance  = profile.ssao.maxDistance;
-    //ssao.output       = SSAOPass.OUTPUT.Default;
-    //composer.addPass(ssao);
-
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(w, h),
       profile.bloom.strength,
@@ -207,13 +201,6 @@ export class Renderer {
       profile.bloom.threshold,
     );
     composer.addPass(bloom);
-
-    //const dof = new BokehPass(scene, camera, {
-    //  focus:   profile.dof.focus,
-    //  aperture:profile.dof.aperture,
-    //  maxblur: profile.dof.maxBlur,
-   // });
-   // composer.addPass(dof);
 
     const vigCA = new ShaderPass(VignetteCAShader);
     vigCA.material.uniforms.darkness.value  = profile.vignette.darkness;
@@ -242,7 +229,6 @@ export class Renderer {
     bloom.strength  = profile.bloom.strength;
     bloom.radius    = profile.bloom.radius;
     bloom.threshold = profile.bloom.threshold;
-
 
     vigCA.material.uniforms.darkness.value = profile.vignette.darkness;
     vigCA.material.uniforms.offset.value   = profile.vignette.offset;
@@ -273,13 +259,24 @@ export class Renderer {
     });
   }
 
-  render(scene, camera) {
-    if (this._activeComposer) {
+  // FIX: wrapped in try/catch to prevent a single bad frame from killing the loop.
+  // Falls back to direct gl.render if the composer fails.
+ render(scene, camera) {
+  if (this._activeComposer) {
+    try {
       this._activeComposer.render();
-    } else {
-      this.gl.render(scene, camera);
+    } catch (e) {
+      console.warn('[Renderer] Composer render error:', e.message);
+      try {
+        this.gl.render(scene, camera);  // ADD try/catch around fallback too
+      } catch (e2) {
+        console.error('[Renderer] Direct render also failed:', e2.message);
+      }
     }
+  } else {
+    this.gl.render(scene, camera);
   }
+}
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -361,11 +358,13 @@ export const Anime = {
     const tex = (() => { const _t = new THREE.CanvasTexture(canvas); _t.channel = 0; return _t; })();
     tex.channel = 0;
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.channel = 0; 
+    tex.channel = 0;
     return tex;
   },
 
   outline(mesh, thickness = 0.04, color = 0x111111) {
+    // FIX: MeshBasicMaterial only accepts 'color' and standard props — removed any invalid 'ap' prop
+    if (!mesh || !mesh.geometry) return null;
     const outMat  = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
     const outMesh = new THREE.Mesh(mesh.geometry, outMat);
     outMesh.scale.setScalar(1 + thickness);
@@ -412,6 +411,13 @@ export class Input {
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === document.getElementById('canvas');
     });
+    // ✅ ADD THIS: re-lock on canvas click when the overlay is closed
+  document.getElementById('canvas').addEventListener('click', () => {
+    if (!document.pointerLockElement && this._canRelock?.()) {
+      document.getElementById('canvas').requestPointerLock();
+    }
+  });
+
     let tx0 = 0, ty0 = 0;
     document.addEventListener('touchstart', e => {
       tx0 = e.touches[0].clientX; ty0 = e.touches[0].clientY;
@@ -749,6 +755,8 @@ export const Build = {
   pointLight(scene, x, y, z, color = 0xffcc66, intensity = 1.5, distance = 8) {
     const light = new THREE.PointLight(color, intensity, distance, 2);
     light.position.set(x, y, z);
+    // FIX: PointLights with castShadow=true require PCFShadowMap or BasicShadowMap,
+    // not VSM. Shadow casting disabled on point lights to avoid conflicts.
     light.castShadow = false;
     scene.add(light);
     return light;
@@ -860,10 +868,15 @@ export const Build = {
     scene.add(pts);
     return pts;
   },
+
   /**
    * animeSky(scene, preset)
    * Presets: 'day' | 'golden' | 'night' | 'dusk' | 'overcast'
-   * Returns { dome, clouds, update(dt) }
+   * Returns { dome, clouds, update(dt, camera) }
+   *
+   * FIX: update() now accepts a camera argument instead of reading
+   * scene.children[0] — which was causing the projectObject crash
+   * because scene.children[0] could be a disposed or invalid object.
    */
   animeSky(scene, preset = 'day') {
     const PRESETS = {
@@ -968,15 +981,23 @@ export const Build = {
     return {
       dome,
       clouds,
-      /** Call this each frame with delta time to animate clouds */
-      update(dt) {
-        clouds.forEach(({ plane, speed, tex }) => {
-          tex.offset.x += dt * speed * 0.0008;
-          tex.offset.y += dt * speed * 0.0003;
+      /**
+       * Call each frame with delta time and the level camera.
+       * FIX: camera is passed in explicitly — previously used scene.children[0]
+       * which crashed projectObject when that child was disposed or undefined.
+       * @param {number} dt
+       * @param {THREE.Camera} camera
+       */
+      update(dt, camera) {
+        clouds.forEach(({ tex }) => {
+          tex.offset.x += dt * 0.0008;
+          tex.offset.y += dt * 0.0003;
           tex.needsUpdate = true;
         });
-        // Dome follows camera so horizon is always centred
-        dome.position.copy(scene.children[0]?.position ?? new THREE.Vector3());
+        // Dome follows camera so the horizon stays correctly centred
+        if (camera) {
+          dome.position.set(camera.position.x, 0, camera.position.z);
+        }
       },
     };
   },
@@ -999,6 +1020,8 @@ export class FXUpdater {
     this._t += dt;
 
     for (const pts of this._particles) {
+      // FIX: guard against particles whose geometry has been disposed between frames
+      if (!pts.geometry || !pts.geometry.attributes.position) continue;
       const pos  = pts.geometry.attributes.position.array;
       const vel  = pts.userData.vel;
       const area = pts.userData.area ?? 20;
@@ -1025,7 +1048,8 @@ export class FXUpdater {
     }
 
     for (const mesh of this._items) {
-      if (!mesh.material || !mesh.userData.baseEmissive) continue;
+      // FIX: guard against item meshes removed from scene mid-loop
+      if (!mesh || !mesh.parent || !mesh.material || !mesh.userData.baseEmissive) continue;
       const pulse = 0.5 + 0.5 * Math.sin(this._t * 3.5 + mesh.position.x * 0.7);
       mesh.material.emissiveIntensity = mesh.userData.baseEmissive * (0.6 + 0.8 * pulse);
       mesh.position.y += Math.sin(this._t * 2.2 + mesh.position.z) * 0.0008;
@@ -1241,10 +1265,13 @@ export class Engine {
     this.input        = new Input();
     this.audio        = new Audio();
     this.hud          = new HUD();
+    // In Engine constructor, after: this.hud = new HUD();
+this.input._canRelock = () => !this.hud.isOverlayOpen && !!this.currentLevel;
     this.loop         = new GameLoop();
     this.currentLevel = null;
     this._levels      = {};
     this._stepTimer   = 0;
+    this.selectedCharacter = null;
 
     // FIX: guard both E key and click — only fire onInteract when pointer
     // is locked (i.e. the overlay is dismissed and player is in-game).
@@ -1281,8 +1308,8 @@ export class Engine {
     level.onEnter();
   }
 
-  // FIX: nextLevel is now a real method on Engine.
-  // main.js can override it (and does), but this ensures levels that call
+  // FIX: nextLevel is a real method on Engine.
+  // main.js can override it, but this ensures levels that call
   // this.engine.nextLevel('driving') won't crash if main.js hasn't patched it yet.
   nextLevel(currentName) {
     console.warn(`nextLevel('${currentName}') called but not yet wired by main.js`);
@@ -1330,6 +1357,9 @@ export class Engine {
     { key:'packing',    icon:'🧺', label:'Packing'        },
     { key:'driving',    icon:'🚗', label:'Driving'        },
     { key:'stargazing', icon:'🌟', label:'Stargazing'     },
+    { key:'letter',     icon:'✉️', label:'Letter'         },
+    { key:'elden', icon:'⚜', label:'Secret Level' },
+    {key:'tardis', icon:'✨', label: 'The End'},
   ];
 
   const btns = panel.querySelector('#devLevelBtns');
@@ -1360,6 +1390,7 @@ export class Engine {
   document.body.appendChild(panel);
   this._devPanel = panel;
 }
+
   _frame(dt) {
     const lvl = this.currentLevel;
     if (!lvl) return;
@@ -1378,9 +1409,6 @@ export class Engine {
   }
 
   // FIX: start() just kicks off the loop; the HUD button fires _onStart when clicked.
-  // Callers must call engine.onStart(fn) BEFORE engine.start() — or any time before
-  // the player clicks — but the old crash (undefined _onStart) is now impossible
-  // because HUD.onStart() stores the callback and the button only fires it if set.
   start() {
     this.loop.start();
   }
@@ -1390,9 +1418,9 @@ export class Engine {
     this.hud.onStart(fn);
 
     // Dev level selector — press backtick ` to toggle
-this._devPanel = null;
-document.addEventListener('keydown', e => {
-  if (e.code === 'Backquote') this._toggleDevPanel();
-});
+    this._devPanel = null;
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Backquote') this._toggleDevPanel();
+    });
   }
 }

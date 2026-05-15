@@ -114,7 +114,7 @@ export function groceryBackground(scene) {
     const refPanel = new THREE.Mesh(
       new THREE.PlaneGeometry(3.2, 2.4),
       new THREE.MeshBasicMaterial({
-        ap: (() => { const _t = new THREE.CanvasTexture(_paintFridgePanel()); _t.channel = 0; return _t; })(),
+        map: (() => { const _t = new THREE.CanvasTexture(_paintFridgePanel()); _t.channel = 0; return _t; })(),
         transparent: false,
       })
     );
@@ -179,10 +179,10 @@ function _paintOutsideView() {
 
   // Sky gradient — warm late afternoon
   const sky = ctx.createLinearGradient(0, 0, 0, 180);
-  sky.addColorStop(0,    '#6ab4e8');
-  sky.addColorStop(0.45, '#f0c87a');
-  sky.addColorStop(0.75, '#ffb347');
-  sky.addColorStop(1,    '#ff8c69');
+  sky.addColorStop(0,    '#c8703a');
+  sky.addColorStop(0.45, '#e8924a');
+  sky.addColorStop(0.75, '#f5a855');
+  sky.addColorStop(1,    '#ffc87a');
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, 512, 180);
 
@@ -629,11 +629,7 @@ export function cookingBackground(scene) {
 
   // Replace the blue window glass with a painted outside view
   // Find and hide the original glass (MeshBasicMaterial color 0x88d8ff)
-  scene.traverse(obj => {
-    if (obj.isMesh && obj.material?.color?.getHex?.() === 0x88d8ff) {
-      obj.visible = false;
-    }
-  });
+
 
   // Painted outside canvas in its place
 const outsideTex = (() => { const _t = new THREE.CanvasTexture(_paintKitchenWindow()); _t.channel = 0; return _t; })();
@@ -771,9 +767,9 @@ export function drivingBackground(scene) {
   // Gradient sky dome
   const domeMat = new THREE.ShaderMaterial({
     uniforms: {
-      topColor: { value: new THREE.Color(0x3a8fd4) },
-      midColor: { value: new THREE.Color(0x89c4e8) },
-      botColor: { value: new THREE.Color(0xc8e8f5) },
+      topColor: { value: new THREE.Color(0xb84a1a) },
+      midColor: { value: new THREE.Color(0xe8824a) },
+      botColor: { value: new THREE.Color(0xffc87a) },
       midPoint: { value: 0.38 },
       exponent: { value: 1.6  },
     },
@@ -797,16 +793,16 @@ export function drivingBackground(scene) {
   dome.renderOrder = -1;
   scene.add(dome);
 
-  scene.fog = new THREE.FogExp2(0xb8d8ee, 0.009);
+scene.fog = new THREE.FogExp2(0xffa855, 0.009);
 
   // Sun
-  const sun = new THREE.DirectionalLight(0xfffbe0, 2.2);
+  const sun = new THREE.DirectionalLight(0xffcc88, 2.2);
   sun.position.set(20, 40, -60);
   sun.castShadow = true;
   sun.shadow.mapSize.setScalar(1024);
   scene.add(sun);
-  scene.add(new THREE.HemisphereLight(0x88c8ff, 0x88bb66, 0.7));
-  scene.add(new THREE.AmbientLight(0xd0e8ff, 0.55));
+  scene.add(new THREE.HemisphereLight(0xff9944, 0xaa6633, 0.7));
+  scene.add(new THREE.AmbientLight(0xff8833, 0.55));
 
   // Cloud planes
   const clouds = [];

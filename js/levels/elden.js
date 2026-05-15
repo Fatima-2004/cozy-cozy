@@ -27,6 +27,7 @@ export class EldenLevel extends Level {
     this._currentAttack = null;
     this._attackPhase = 'idle';
     this._attackTimer = 0;
+    this._slamTelegraphDuration = 1.1; // FIX: store initial slam telegraph duration
     this._comboStep = 0;
     this._comboHitThisSwing = false;
     this._lungeDir = new THREE.Vector3();
@@ -44,7 +45,8 @@ export class EldenLevel extends Level {
     this._clouds = [];
     this._lightShafts = [];
     this._mistPlanes = [];
-    this._birds = [];
+    this._birds = [];       // FIX: group-level bird data only
+    this._birdWings = [];   // FIX: separated wing-flap data
     this._raindrops = [];
     this._windowGlows = [];
     this._banners = [];
@@ -190,7 +192,8 @@ export class EldenLevel extends Level {
       if (h > 48) {
         const cap = new THREE.Mesh(
           new THREE.ConeGeometry(w * 0.12, h * 0.15, 5),
-          new THREE.MeshBasicMaterial({ color: 0x6070788, transparent: true, opacity: 0.25 })
+          // FIX: was 0x6070788 (7 hex digits) — corrected to 0x607078
+          new THREE.MeshBasicMaterial({ color: 0x607078, transparent: true, opacity: 0.25 })
         );
         cap.position.set(x, h * 0.88, z);
         this.scene.add(cap);
@@ -1175,12 +1178,15 @@ export class EldenLevel extends Level {
       const bird = new THREE.Group();
       const body = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.28), new THREE.MeshBasicMaterial({ color: 0x111010 }));
       bird.add(body);
+
+      // FIX: push wing data into _birdWings (separate array), not _birds
       [-1, 1].forEach(side => {
         const wing = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.12), new THREE.MeshBasicMaterial({ color: 0x0e0d0d, side: THREE.DoubleSide }));
         wing.position.set(side * 0.28, 0, 0);
         bird.add(wing);
-        this._birds.push({ wing, side, phase: Math.random() * Math.PI * 2 });
+        this._birdWings.push({ wing, side, phase: Math.random() * Math.PI * 2 });
       });
+
       const radius = 15 + Math.random() * 20;
       const height = 30 + Math.random() * 28;
       bird.position.set(
@@ -1189,6 +1195,7 @@ export class EldenLevel extends Level {
         -20 + Math.sin(Math.random() * Math.PI * 2) * radius
       );
       this.scene.add(bird);
+      // FIX: push group-level data into _birds only
       this._birds.push({ group: bird, angle: Math.random() * Math.PI * 2, r: radius, h: height, speed: 0.3 + Math.random() * 0.3, centerX: 0, centerZ: -15 });
     }
 
@@ -1320,7 +1327,7 @@ export class EldenLevel extends Level {
     this.fx.registerParticles(Build.particles(this.scene, 50,  18, 0x4488aa, 0.035)); // cold mist wisps
 
     // ═══════════════════════════════════════════════════
-    //  MARGIT — THE FELL OMEN  (unchanged from original)
+    //  MARGIT — THE FELL OMEN
     // ═══════════════════════════════════════════════════
     const enemyGroup = new THREE.Group();
     this.scene.add(enemyGroup);
@@ -1654,7 +1661,7 @@ export class EldenLevel extends Level {
   }
 
   // ═══════════════════════════════════════════════════
-  //  PLAYER COMBAT (unchanged)
+  //  PLAYER COMBAT
   // ═══════════════════════════════════════════════════
   _playerSwing() {
     if (this._playerAttackCooldown > 0) return;
@@ -1888,7 +1895,7 @@ export class EldenLevel extends Level {
         this.engine.audio.play('whoosh');
         break;
       case 'slam':
-        this._attackTimer = 1.1;
+        this._attackTimer = this._slamTelegraphDuration; // FIX: use stored constant
         this._eyeLight.intensity = 14;
         this._weaponGroup.rotation.x = -2.4;
         this._weaponGroup.position.y = 2.5;
@@ -2173,25 +2180,22 @@ export class EldenLevel extends Level {
       this._rain.geometry.attributes.position.needsUpdate = true;
     }
 
+    // FIX: Bird wing flaps now use _birdWings, bird movement uses _birds
+    // ── Bird wing flaps
+    this._birdWings.forEach(({ wing, side, phase }) => {
+      wing.rotation.z = side * (0.3 + 0.5 * Math.abs(Math.sin(t * 5 + phase)));
+    });
+
     // ── Birds circling
-    if (this._birds) {
-      this._birds.forEach(birdObj => {
-        if (!birdObj.group) {
-          // wing flap data
-          if (birdObj.wing) {
-            birdObj.wing.rotation.z = birdObj.side * (0.3 + 0.5 * Math.abs(Math.sin(t * 5 + birdObj.phase)));
-          }
-        } else {
-          birdObj.angle += dt * birdObj.speed;
-          birdObj.group.position.set(
-            birdObj.centerX + Math.cos(birdObj.angle) * birdObj.r,
-            birdObj.h + Math.sin(t * 0.8 + birdObj.angle) * 2,
-            birdObj.centerZ + Math.sin(birdObj.angle) * birdObj.r * 0.6
-          );
-          birdObj.group.rotation.y = -birdObj.angle + Math.PI / 2;
-        }
-      });
-    }
+    this._birds.forEach(birdObj => {
+      birdObj.angle += dt * birdObj.speed;
+      birdObj.group.position.set(
+        birdObj.centerX + Math.cos(birdObj.angle) * birdObj.r,
+        birdObj.h + Math.sin(t * 0.8 + birdObj.angle) * 2,
+        birdObj.centerZ + Math.sin(birdObj.angle) * birdObj.r * 0.6
+      );
+      birdObj.group.rotation.y = -birdObj.angle + Math.PI / 2;
+    });
 
     // ── Flash overlay fade
     if (this._flashTimer > 0) {
@@ -2252,8 +2256,9 @@ export class EldenLevel extends Level {
     // ── Attack state machine
     if (this._currentAttack) {
       this._attackTimer -= dt;
+      // FIX: use stored _slamTelegraphDuration instead of hardcoded 1.1
       if (this._currentAttack === 'slam' && this._attackPhase === 'telegraph') {
-        const progress = 1 - Math.max(0, this._attackTimer / 1.1);
+        const progress = 1 - Math.max(0, this._attackTimer / this._slamTelegraphDuration);
         this._slamCircle.material.opacity = 0.4 + progress * 0.5;
         this._slamInner.material.opacity = 0.15 + progress * 0.35;
       }
